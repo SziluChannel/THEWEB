@@ -114,7 +114,7 @@ fn send_user(user: &NewUser){
     let user = user.clone();
     wasm_bindgen_futures::spawn_local(async move {
         let user = user.clone();
-        let result = post_request::<NewUser>("/users/new", user.clone())
+        let result = post_request::<NewUser>("/users/new", user.clone()) //this part is buggy cause the return type wants to be the same while no text is returned it gives an error
             .await.unwrap();
         log!(format!("Creating user: {:#?} \nHttp status: {:#?}", user, result));
     });
