@@ -15,7 +15,7 @@ pub fn get_all_users() -> Vec<User>{
     results
 }
 
-pub fn new_user(user: &NewUser) {
+pub fn new_user(user: &NewUser) -> Option<String>{
     use schema::users::dsl::*;
     let new_user = InsertableNewUser {
         name: &user.name,
@@ -27,6 +27,7 @@ pub fn new_user(user: &NewUser) {
         .values(&new_user)
         .get_result::<User>(conn)
         .expect("Error adding new user!");
+    Some("Ok".to_string())
 }
 
 pub fn delete_user(user_id: &str) -> Result<(), Box<dyn Error>>{
