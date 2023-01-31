@@ -1,14 +1,28 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
+use uuid::Uuid;
+use serde::{Serialize, Deserialize};
+use diesel::prelude::*;
+#[derive(Serialize, Deserialize, PartialEq, Queryable, Debug)]
+pub struct User{
+    pub id: Uuid,
+    pub name: String,
+    pub email: String,
+    pub password: String
 }
+
+
+#[derive(Debug, PartialEq, Queryable, Serialize, Deserialize, Clone)]
+pub struct NewUser{
+    pub name: String,
+    pub email: String,
+    pub password: String
+}
+
+
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[test]
     fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+
     }
 }
