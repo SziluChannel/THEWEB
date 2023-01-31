@@ -1,10 +1,10 @@
 pub mod schema;
-pub mod insertables;
+mod insertables;
 use insertables::{InsertableNewUser};
 use diesel::{pg::PgConnection, prelude::*};
 use models::{User, NewUser};
 use std::error::Error;
-use uuid;
+use std::str::FromStr;
 
 pub fn get_all_users() -> Vec<User>{
     use schema::users::dsl::*;
@@ -34,8 +34,10 @@ pub fn delete_user(user_id: &str) -> Result<(), Box<dyn Error>>{
     let conn = &mut establish_connection();
 
     let user_id = uuid::Uuid::from_str(user_id)?;
-    diesel::delete(users.filter(id.eq(user_id)))
-        .execute(conn)?;
+    diesel::delete(
+        users.filter(
+            id.eq(user_id)
+        )).execute(conn)?;
 
     Ok(())
 }
