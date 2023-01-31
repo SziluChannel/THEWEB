@@ -6,7 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-db = {path="../db"}
-models = {path="../models"}
+models = { path = "../models"}
+db = { path = "../db"}
 actix-web = "4.3.0"
+serde = "1.0.152"
 actix-cors = "0.6.4"

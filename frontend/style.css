@@ -1,0 +1,36 @@
+body {
+    background-color: darkblue;
+    color: wheat;
+}
+
+
+div > table {
+    width: 100%;
+    background-color: darkred;
+    font-family: 'Times New Roman', Times, serif;
+}
+
+div > table > tr:hover {
+    background-color: darkcyan;
+}
+
+input[type="text"] {
+    width: 100%;
+    height: 200%;
+    background-color: aqua;
+}
+.navbar {
+    width: 100%;
+    background-color: blueviolet;
+}
+.navbar > tr > td {
+    text-align: center;
+}
+.navbar > tr > td > a {
+    color: black;
+    display: block;
+}
+.navbar > tr > td > a:hover {
+    background-color: darkorange;
+    color: red;
+}
