@@ -21,7 +21,7 @@ async fn get_all_users() -> impl Responder {
 
 #[post("/users/new")]
 async fn new_user(user: Json<NewUser>) -> impl Responder {
-    HttpResponse::Ok().body(db::new_user(&user).unwrap())
+    HttpResponse::Ok().json(db::new_user(&user).unwrap())
 }
 
 #[delete("/users/{user}")]

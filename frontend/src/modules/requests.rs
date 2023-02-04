@@ -40,17 +40,18 @@ where B: Serialize {
     )
 }
 
-pub async fn post_request<B>(path: &str, body: B) -> Result<B, Error>
-where B: DeserializeOwned + Serialize {
+pub async fn post_request<B, T>(path: &str, body: B) -> Result<T, Error>
+where
+    T: DeserializeOwned,
+    B: Serialize {
     Ok(
         request::<B>(
             Method::POST,
             path,
             body)
             .await
-            .json::<B>()
-            .await
-            .unwrap()
+            .json::<T>()
+            .await?
     )
 }
 

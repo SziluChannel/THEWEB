@@ -17,6 +17,11 @@ pub struct NewUser{
     pub password: String
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ResultMessage {
+    pub message: String
+}
+
 
 
 #[cfg(test)]

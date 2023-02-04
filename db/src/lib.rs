@@ -2,7 +2,7 @@ pub mod schema;
 mod insertables;
 use insertables::{InsertableNewUser};
 use diesel::{pg::PgConnection, prelude::*};
-use models::{User, NewUser};
+use models::{User, NewUser, ResultMessage};
 use std::error::Error;
 use std::str::FromStr;
 
@@ -15,7 +15,7 @@ pub fn get_all_users() -> Vec<User>{
     results
 }
 
-pub fn new_user(user: &NewUser) -> Option<String>{
+pub fn new_user(user: &NewUser) -> Option<ResultMessage>{
     use schema::users::dsl::*;
     let new_user = InsertableNewUser {
         name: &user.name,
@@ -27,7 +27,7 @@ pub fn new_user(user: &NewUser) -> Option<String>{
         .values(&new_user)
         .get_result::<User>(conn)
         .expect("Error adding new user!");
-    Some("Ok".to_string())
+    Some(ResultMessage { message: "Ok".to_string() })
 }
 
 pub fn delete_user(user_id: &str) -> Result<(), Box<dyn Error>>{
