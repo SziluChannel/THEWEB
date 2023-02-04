@@ -2,7 +2,7 @@ use actix_web::{get, post, delete, web, web::Json, App, HttpResponse, HttpServer
 use actix_cors::Cors;
 use models::{NewUser, LoginUser};
 use db;
-use password_hash::{PasswordHasher};
+use password_hash::{PasswordHasher, PasswordVerifier, PasswordHash};
 use argon2::Argon2;
 use base64::Engine;
 use jsonwebtoken::{encode, Header, EncodingKey};
@@ -31,7 +31,7 @@ async fn new_user(user: Json<NewUser>) -> impl Responder {
         &Argon2::default(),
         user.password.as_bytes(),
         &base64::engine::general_purpose::STANDARD.encode(b"Hello world~")
-    ).expect("Errror with hashing").hash.expect("No good hash!").to_string();
+    ).expect("Errror with hashing").to_string();
     HttpResponse::Ok().json(
         match db::new_user(&user) {
             Ok(r) => r,
@@ -43,25 +43,35 @@ async fn new_user(user: Json<NewUser>) -> impl Responder {
 #[post("/users/login")]
 async fn login_user(user: Json<LoginUser>) -> impl Responder {
     //vertify user using the database backend
-    match db::get_user_id_by_email(&user.email) {
-        Ok(id) => {  //Successful vertification
-            let key = fs::read_to_string("secret.key").unwrap();
-            let token = encode(
-                &Header::default(),
-                &user,
-                &EncodingKey::from_secret(key.as_ref()));
-            match token {
-                Ok(token) => {
-                    println!("Session token OK: {token}");
-                    HttpResponse::Ok().json(Ok::<String, String>(token))
-                },
-                Err(e) => {
-                    println!("Error with token: {e}");
-                    HttpResponse::BadRequest().json(Err::<String, String>(format!("Error with token: {e}")))
+    println!("Logging in user: {:#?}", user);
+    match db::get_user_by_email(&user.email) {
+        Ok((id, hash)) => {  //user exists
+            println!("User exists!\nChecking password...");
+            let hash = PasswordHash::new(&hash).unwrap();
+            if PasswordVerifier::verify_password(&Argon2::default(), user.password.as_bytes(), &hash).is_ok() {
+                println!("Password OK!");
+                let key = fs::read_to_string("secret.key").unwrap();
+                let token = encode(
+                    &Header::default(),
+                    &id,
+                    &EncodingKey::from_secret(key.as_ref()));
+                match token {
+                    Ok(token) => {
+                        println!("Session token OK: {token}");
+                        HttpResponse::Ok().json(Ok::<String, String>(token))
+                    },
+                    Err(e) => {
+                        println!("Error with token: {e}");
+                        HttpResponse::BadRequest().json(Err::<String, String>(format!("Error with token: {e}")))
+                    }
                 }
+            }else{
+                println!("Invalid password!");
+                HttpResponse::BadRequest().json(Err::<String, String>(format!("Invalid password!")))
             }
         },
         Err(s) => { //Something bad happened no login happening
+            println!("Error with vertification!");
             println!("Error getting user: {s}");
             HttpResponse::BadRequest().json(Err::<String, String>(format!("Error getting user: {s}")))
         }

@@ -15,12 +15,15 @@ pub fn get_all_users() -> Vec<User>{
     results
 }
 
-pub fn get_user_id_by_email(mail: &str) -> Result<String, String>{
+pub fn get_user_by_email(mail: &str) -> Result<(String, String), String>{
     use schema::users::dsl::*;
     let conn = &mut establish_connection();
-    let res = users.filter(email.eq(mail)).select(id).get_result::<uuid::Uuid>(conn);
+    let res = users.filter(
+        email.eq(mail))
+        .select((id, password))
+        .get_result::<(uuid::Uuid, String)>(conn);
     match res {
-        Ok(s) => Ok(s.to_string()),
+        Ok((uid, hash)) => Ok((uid.to_string(), hash)),
         Err(e) => Err(e.to_string())
     }
 }
