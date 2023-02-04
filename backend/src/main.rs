@@ -6,6 +6,7 @@ use password_hash::{PasswordHasher};
 use argon2::Argon2;
 use base64::Engine;
 use jsonwebtoken::{encode, Header, EncodingKey};
+use std::fs;
 
 #[get("/")]
 async fn hello() -> impl Responder {
@@ -41,13 +42,14 @@ async fn new_user(user: Json<NewUser>) -> impl Responder {
 
 #[post("/users/login")]
 async fn login_user(user: Json<LoginUser>) -> impl Responder {
-    //vertify user
+    //vertify user using the database backend
 
     //after successful vertification generate a json web token
+    let key = fs::read_to_string("secret.key").unwrap();
     let token = encode(
         &Header::default(),
         &user,
-        &EncodingKey::from_secret("key".as_ref()));
+        &EncodingKey::from_secret(key.as_ref()));
     match token {
         Ok(token) => {
             println!("Session token OK: {token}");
