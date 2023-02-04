@@ -5,11 +5,15 @@ body {
 
 
 div > table {
+    table-layout: fixed;
     width: 100%;
     background-color: darkred;
     font-family: 'Times New Roman', Times, serif;
 }
-
+td {
+    max-width: 25%;
+    word-wrap: break-word;
+}
 div > table > tr:hover {
     background-color: darkcyan;
 }

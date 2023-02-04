@@ -159,9 +159,12 @@ fn del_user() -> Html {
         <>
             <br/><br/><br/>
             <h4>
-                {"dello: "}<input type="button" onclick={onclick} value={"DeleteUser"}/>
-                <br/>
-                <input type="text" ref={deleter_ref}/>
+                <form onsubmit={onclick}>
+                    {"Delete: "}
+                    <input type="submit" value={"DeleteUser"}/>
+                    <br/>
+                    <input type="id" ref={deleter_ref}/>
+                </form>
             </h4>
         </>
     }

@@ -16,6 +16,29 @@ pub struct NewUser{
     pub email: String,
     pub password: String
 }
+impl Default for NewUser {
+    fn default() -> Self {
+        NewUser {
+            name: String::new(),
+            email: String::new(),
+            password: String::new()
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct LoginUser {
+    pub email: String,
+    pub password: String
+}
+impl Default for LoginUser {
+    fn default() -> Self {
+        LoginUser {
+            email: String::new(),
+            password: String::new()
+        }
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ResultMessage {

@@ -2,6 +2,9 @@ use actix_web::{get, post, delete, web, web::Json, App, HttpResponse, HttpServer
 use actix_cors::Cors;
 use models::{NewUser};
 use db;
+use password_hash::{PasswordHasher};
+use argon2::Argon2;
+use base64::Engine;
 
 #[get("/")]
 async fn hello() -> impl Responder {
@@ -21,6 +24,12 @@ async fn get_all_users() -> impl Responder {
 
 #[post("/users/new")]
 async fn new_user(user: Json<NewUser>) -> impl Responder {
+    let mut user = user.clone();
+    user.password = PasswordHasher::hash_password(
+        &Argon2::default(),
+        user.password.as_bytes(),
+        &base64::engine::general_purpose::STANDARD.encode(b"Hello world~")
+    ).expect("Errror with hashing").hash.expect("No good hash!").to_string();
     HttpResponse::Ok().json(db::new_user(&user).unwrap())
 }
 
