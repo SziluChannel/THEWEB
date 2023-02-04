@@ -6,7 +6,7 @@ use yew_hooks::*;
 use web_sys::window;
 
 use gloo::console::log;
-use models::{LoginUser, ResultMessage};
+use models::{LoginUser};
 use crate::modules::requests::{post_request};
 
 
@@ -17,17 +17,17 @@ pub fn login_form() -> Html {
     let login = {
         let login_info = login_info.clone();
         use_async( async move {
-            let res = post_request::<LoginUser, ResultMessage>("/users/login", (*login_info).clone()).await;
+            let res = post_request::<LoginUser, Result<String, String>>("/users/login", (*login_info).clone()).await.unwrap();
             match res {
                 Ok(result) => {
-                    log!(format!("OK: {}", result.message));
+                    log!(format!("OK: {}", result));
                     let session_storage = window().unwrap().session_storage().unwrap().unwrap();
-                    match session_storage.set("jwt", &result.message) {
+                    match session_storage.set("jwt", &result) {
                         Ok(()) => Ok(()),
-                        Err(e) => Err(ResultMessage { message: format!("{:#?}", e) })
+                        Err(e) => Err(format!("{:#?}", e))
                     }
                 },
-                Err(e) => {log!(format!("Error getting token: {:#?}", e)); Err(ResultMessage{message:"Error with getting token!".to_string()})}
+                Err(e) => {log!(format!("Error getting token: {:#?}", e)); Err("Error with getting token!".to_string())}
             }
         })
     };

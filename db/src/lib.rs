@@ -2,7 +2,7 @@ pub mod schema;
 mod insertables;
 use insertables::{InsertableNewUser};
 use diesel::{pg::PgConnection, prelude::*};
-use models::{User, NewUser, ResultMessage};
+use models::{User, NewUser};
 use std::error::Error;
 use std::str::FromStr;
 
@@ -15,7 +15,17 @@ pub fn get_all_users() -> Vec<User>{
     results
 }
 
-pub fn new_user(user: &NewUser) -> Result<ResultMessage, ResultMessage>{
+pub fn get_user_id_by_email(mail: &str) -> Result<String, String>{
+    use schema::users::dsl::*;
+    let conn = &mut establish_connection();
+    let res = users.filter(email.eq(mail)).select(id).get_result::<uuid::Uuid>(conn);
+    match res {
+        Ok(s) => Ok(s.to_string()),
+        Err(e) => Err(e.to_string())
+    }
+}
+
+pub fn new_user(user: &NewUser) -> Result<String, String>{
     use schema::users::dsl::*;
     let new_user = InsertableNewUser {
         name: &user.name,
@@ -27,8 +37,8 @@ pub fn new_user(user: &NewUser) -> Result<ResultMessage, ResultMessage>{
         .values(&new_user)
         .get_result::<User>(conn);
     match res {
-        Ok(_) => Ok(ResultMessage { message: "Ok".to_string() }),
-        Err(e) => Err(ResultMessage { message: format!("{:#?}", e) })
+        Ok(_) => Ok("Ok".to_string()),
+        Err(e) => Err(format!("{:#?}", e))
     }
 }
 

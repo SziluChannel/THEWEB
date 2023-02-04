@@ -39,11 +39,6 @@ impl Default for LoginUser {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ResultMessage {
-    pub message: String
-}
-
 
 
 #[cfg(test)]

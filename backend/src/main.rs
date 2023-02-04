@@ -1,6 +1,6 @@
 use actix_web::{get, post, delete, web, web::Json, App, HttpResponse, HttpServer, Responder};
 use actix_cors::Cors;
-use models::{NewUser, LoginUser, ResultMessage};
+use models::{NewUser, LoginUser};
 use db;
 use password_hash::{PasswordHasher};
 use argon2::Argon2;
@@ -43,21 +43,27 @@ async fn new_user(user: Json<NewUser>) -> impl Responder {
 #[post("/users/login")]
 async fn login_user(user: Json<LoginUser>) -> impl Responder {
     //vertify user using the database backend
-
-    //after successful vertification generate a json web token
-    let key = fs::read_to_string("secret.key").unwrap();
-    let token = encode(
-        &Header::default(),
-        &user,
-        &EncodingKey::from_secret(key.as_ref()));
-    match token {
-        Ok(token) => {
-            println!("Session token OK: {token}");
-            HttpResponse::Ok().json(ResultMessage{ message: token })
+    match db::get_user_id_by_email(&user.email) {
+        Ok(id) => {  //Successful vertification
+            let key = fs::read_to_string("secret.key").unwrap();
+            let token = encode(
+                &Header::default(),
+                &user,
+                &EncodingKey::from_secret(key.as_ref()));
+            match token {
+                Ok(token) => {
+                    println!("Session token OK: {token}");
+                    HttpResponse::Ok().json(Ok::<String, String>(token))
+                },
+                Err(e) => {
+                    println!("Error with token: {e}");
+                    HttpResponse::BadRequest().json(Err::<String, String>(format!("Error with token: {e}")))
+                }
+            }
         },
-        Err(e) => {
-            println!("Error with token: {e}");
-            HttpResponse::BadRequest().json(ResultMessage{ message: format!("Error with token: {e}") })
+        Err(s) => { //Something bad happened no login happening
+            println!("Error getting user: {s}");
+            HttpResponse::BadRequest().json(Err::<String, String>(format!("Error getting user: {s}")))
         }
     }
 }
