@@ -12,6 +12,8 @@ pub fn navbar() -> Html {
                         <td><Link<Route> to={Route::Root}>{"HOME"}</Link<Route>></td>
                         <td><Link<Route> to={Route::Users}>{"USERS"}</Link<Route>></td>
                         <td><Link<Route> to={Route::Login}>{"LOGIN"}</Link<Route>></td>
+                        <td><Link<Route> to={Route::Register}>{"REGISTER"}</Link<Route>></td>
+                        <td><Link<Route> to={Route::Register}>{"LOGOUT"}</Link<Route>></td>
                     </tr>
                 </table>
             </h1>
