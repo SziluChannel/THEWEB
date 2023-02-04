@@ -1,10 +1,11 @@
 use actix_web::{get, post, delete, web, web::Json, App, HttpResponse, HttpServer, Responder};
 use actix_cors::Cors;
-use models::{NewUser};
+use models::{NewUser, LoginUser, ResultMessage};
 use db;
 use password_hash::{PasswordHasher};
 use argon2::Argon2;
 use base64::Engine;
+use jsonwebtoken::{encode, Header, EncodingKey};
 
 #[get("/")]
 async fn hello() -> impl Responder {
@@ -30,7 +31,33 @@ async fn new_user(user: Json<NewUser>) -> impl Responder {
         user.password.as_bytes(),
         &base64::engine::general_purpose::STANDARD.encode(b"Hello world~")
     ).expect("Errror with hashing").hash.expect("No good hash!").to_string();
-    HttpResponse::Ok().json(db::new_user(&user).unwrap())
+    HttpResponse::Ok().json(
+        match db::new_user(&user) {
+            Ok(r) => r,
+            Err(r) => r
+        }
+    )
+}
+
+#[post("/users/login")]
+async fn login_user(user: Json<LoginUser>) -> impl Responder {
+    //vertify user
+
+    //after successful vertification generate a json web token
+    let token = encode(
+        &Header::default(),
+        &user,
+        &EncodingKey::from_secret("key".as_ref()));
+    match token {
+        Ok(token) => {
+            println!("Session token OK: {token}");
+            HttpResponse::Ok().json(ResultMessage{ message: token })
+        },
+        Err(e) => {
+            println!("Error with token: {e}");
+            HttpResponse::BadRequest().json(ResultMessage{ message: format!("Error with token: {e}") })
+        }
+    }
 }
 
 #[delete("/users/{user}")]
@@ -58,6 +85,7 @@ async fn main() -> std::io::Result<()> {
             .service(get_all_users)
             .service(new_user)
             .service(delete_user)
+            .service(login_user)
             .route("/hey", web::get().to(manual_hello))
     })
     .bind(("127.0.0.1", 8888))?

@@ -9,7 +9,6 @@ pub struct User{
     pub password: String
 }
 
-
 #[derive(Debug, PartialEq, Queryable, Serialize, Deserialize, Clone)]
 pub struct NewUser{
     pub name: String,
@@ -26,7 +25,7 @@ impl Default for NewUser {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LoginUser {
     pub email: String,
     pub password: String

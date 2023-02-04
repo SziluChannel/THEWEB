@@ -15,7 +15,7 @@ pub fn get_all_users() -> Vec<User>{
     results
 }
 
-pub fn new_user(user: &NewUser) -> Option<ResultMessage>{
+pub fn new_user(user: &NewUser) -> Result<ResultMessage, ResultMessage>{
     use schema::users::dsl::*;
     let new_user = InsertableNewUser {
         name: &user.name,
@@ -23,11 +23,13 @@ pub fn new_user(user: &NewUser) -> Option<ResultMessage>{
         password: &user.password,
     };
     let conn = &mut establish_connection();
-    diesel::insert_into(users)
+    let res = diesel::insert_into(users)
         .values(&new_user)
-        .get_result::<User>(conn)
-        .expect("Error adding new user!");
-    Some(ResultMessage { message: "Ok".to_string() })
+        .get_result::<User>(conn);
+    match res {
+        Ok(_) => Ok(ResultMessage { message: "Ok".to_string() }),
+        Err(e) => Err(ResultMessage { message: format!("{:#?}", e) })
+    }
 }
 
 pub fn delete_user(user_id: &str) -> Result<(), Box<dyn Error>>{

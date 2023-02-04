@@ -16,3 +16,5 @@ password-hash = "0.4.2"
 argon2 = "0.4.1"
 
 base64 = "0.21.0"
+
+jsonwebtoken = "8.2.0"

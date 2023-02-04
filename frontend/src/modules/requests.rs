@@ -1,13 +1,19 @@
 use reqwest::{Response, Client, Method, Error};
 use serde::{Serialize, de::DeserializeOwned};
+use web_sys::window;
 use crate::BACKEND;
 
 async fn request<B>(method: Method, path: &str, body: B) -> Response
 where B: Serialize {
+    let session_storage = window().unwrap().session_storage().unwrap().unwrap();
+    let jwt = session_storage.get("jwt").unwrap_or_default().unwrap_or_default();
     let allow_body = method == Method::POST || method == Method::PUT;
     let mut builder = Client::new()
         .request(method, &format!("{BACKEND}{path}"))
         .header("Content-Type", "application/json");
+    if jwt != "".to_string() {
+        builder = builder.header("Authorization", format!("bearer {jwt}"));
+    }
     if allow_body {
         builder =   builder.json(&body);
     }
