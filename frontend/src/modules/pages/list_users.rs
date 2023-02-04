@@ -82,13 +82,22 @@ fn new_user() -> Html {
         let email_node_ref = email_node_ref.clone();
         let password_node_ref = password_node_ref.clone();
 
-        let value = Callback::from(move |_| {
+        let value = Callback::from(move |e: SubmitEvent| {
             let name_input = name_node_ref.cast::<HtmlInputElement>();
             let email_input = email_node_ref.cast::<HtmlInputElement>();
             let password_input = password_node_ref.cast::<HtmlInputElement>();
-            if let Some(input) = name_input {name_value_handle.set(input.value())}
-            if let Some(input) = email_input {email_value_handle.set(input.value())}
-            if let Some(input) = password_input {password_value_handle.set(input.value())}
+            if let Some(input) = name_input {
+                if input.value() == "" {e.prevent_default()}
+                else {name_value_handle.set(input.value())}
+            }
+            if let Some(input) = email_input {
+                if input.value() == "" {e.prevent_default()}
+                else {email_value_handle.set(input.value())}
+            }
+            if let Some(input) = password_input {
+                if input.value() == "" {e.prevent_default()}
+                else{password_value_handle.set(input.value())}
+            }
         });
 
         if !name_value.is_empty() && !email_value.is_empty() && !pass_value.is_empty(){
@@ -103,7 +112,11 @@ fn new_user() -> Html {
 
     html! {
         <tr>
-            <td><input type="button" onclick={on_submit} value={"Add user"}/></td>
+            <td>
+                <form onsubmit={on_submit}>
+                    <input type="submit" value={"Add user"}/>
+                </form>
+            </td>
             <td><input type="text" ref={name_node_ref}/></td>
             <td><input type="text" ref={email_node_ref}/></td>
             <td><input type="text" ref={password_node_ref}/></td>
