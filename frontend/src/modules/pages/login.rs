@@ -5,7 +5,6 @@ use yew::prelude::*;
 use yew_hooks::*;
 use web_sys::window;
 use yew_router::prelude::use_navigator;
-use yew_router::prelude::{Redirect};
 
 use gloo::console::log;
 use models::{LoginUser};
@@ -14,6 +13,7 @@ use crate::modules::requests::{post_request};
 
 #[function_component(LoginForm)]
 pub fn login_form() -> Html {
+    let trigger = yew::functional::use_force_update();
     let login_info = use_state(|| LoginUser::default());
     let navigator = use_navigator().unwrap();
     let login = {
@@ -38,7 +38,8 @@ pub fn login_form() -> Html {
         Callback::from( move |_e: SubmitEvent| {
             log!("Submit!!");
             login.run();
-            navigator.push(&crate::modules::router::Route::Root);
+            trigger.force_update();
+            navigator.replace(&crate::modules::router::Route::Root);
         })
     };
     let oninput_email = {

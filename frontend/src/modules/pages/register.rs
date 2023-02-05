@@ -39,7 +39,7 @@ pub fn sign_up() -> Html {
             _e.prevent_default();
             let error = error.clone();
             log!("Submitted new user...");
-            if !user_info.email.is_empty() && !user_info.name.is_empty() && !user_info.password.is_empty() {
+            if user_info.validated() {
                 create_user.run();
                 if create_user.error != None {
                     log!(format!("Error result: {:#?}", create_user.error));
