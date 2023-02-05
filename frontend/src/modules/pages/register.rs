@@ -8,11 +8,25 @@ use crate::modules::requests::{post_request};
 #[function_component(Register)]
 pub fn sign_up() -> Html {
     let user_info = use_state(|| NewUser::default());
+    let error = use_state(|| String::from("OK"));
     let create_user = {
         let user_info = user_info.clone();
         use_async(async move {
-            match post_request::<NewUser, String>("/users/new", (*user_info).clone()).await {
-                Ok(message) => Ok(message),
+            let result = post_request::<NewUser, Result<(), String>>("/users/new", (*user_info).clone()).await;
+            log!(format!("Result data: {:#?}", result));
+            match result {
+                Ok(answer) => {
+                    match answer.content {
+                        Ok(()) => {
+                            log!(format!("OK: {}",answer.message));
+                            Ok(())
+                        }
+                        Err(e) => {
+                            log!(format!("Error: {e}"));
+                            Err(e)
+                        }
+                    }
+                },
                 Err(e) => Err(e.to_string())
             }
         })
@@ -20,13 +34,20 @@ pub fn sign_up() -> Html {
 
     let onsubmit = {
         let user_info = user_info.clone();
-        Callback::from(move |e: SubmitEvent| {
+        let error = error.clone();
+        Callback::from(move |_e: SubmitEvent| {
+            _e.prevent_default();
+            let error = error.clone();
             log!("Submitted new user...");
             if !user_info.email.is_empty() && !user_info.name.is_empty() && !user_info.password.is_empty() {
                 create_user.run();
-                log!(format!("Result: {:#?}", create_user.data));
+                if create_user.error != None {
+                    log!(format!("Error result: {:#?}", create_user.error));
+                    error.set(create_user.error.clone().unwrap_or("OK".to_string()));
+                }
             }else {
                 log!("Incomplete form!");
+                error.set(String::from("Incomplete form!"));
             }
         }
     )};
@@ -77,6 +98,9 @@ pub fn sign_up() -> Html {
                     type="password"
                     oninput={password_input}
                     placeholder="Give a pass..."/>
+            </fieldset>
+            <fieldset>
+                <h3><label for="Error">{ (*error).clone() }</label></h3>
             </fieldset>
             <fieldset>
                 <input

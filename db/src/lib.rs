@@ -1,7 +1,7 @@
 pub mod schema;
 mod insertables;
 use insertables::{InsertableNewUser};
-use diesel::{pg::PgConnection, prelude::*};
+use diesel::{pg::PgConnection, prelude::*, result::Error::DatabaseError, result::DatabaseErrorKind::UniqueViolation};
 use models::{User, NewUser};
 use std::error::Error;
 use std::str::FromStr;
@@ -41,7 +41,15 @@ pub fn new_user(user: &NewUser) -> Result<String, String>{
         .get_result::<User>(conn);
     match res {
         Ok(_) => Ok("Ok".to_string()),
-        Err(e) => Err(format!("{:#?}", e))
+        Err(e) => {
+            match e {
+                DatabaseError(k, _) => match k {
+                    UniqueViolation => Err(String::from("User exists!")),
+                    _ => Err(format!("{:#?}", e))
+                },
+                _ => Err(format!("{:#?}", e))
+            }
+        }
     }
 }
 

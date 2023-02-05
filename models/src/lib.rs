@@ -1,6 +1,13 @@
 use uuid::Uuid;
 use serde::{Serialize, Deserialize};
 use diesel::prelude::*;
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct HttpAnswer<T> {
+    pub message: String,
+    pub content: T,
+}
+
 #[derive(Serialize, Deserialize, PartialEq, Queryable, Debug)]
 pub struct User{
     pub id: Uuid,

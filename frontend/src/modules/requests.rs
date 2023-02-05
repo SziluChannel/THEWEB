@@ -1,6 +1,7 @@
 use reqwest::{Response, Client, Method, Error};
 use serde::{Serialize, de::DeserializeOwned};
 use web_sys::window;
+use models::{HttpAnswer};
 use crate::BACKEND;
 
 async fn request<B>(method: Method, path: &str, body: B) -> Response
@@ -46,7 +47,7 @@ where B: Serialize {
     )
 }
 
-pub async fn post_request<B, T>(path: &str, body: B) -> Result<T, Error>
+pub async fn post_request<B, T>(path: &str, body: B) -> Result<HttpAnswer<T>, Error>
 where
     T: DeserializeOwned,
     B: Serialize {
@@ -56,7 +57,7 @@ where
             path,
             body)
             .await
-            .json::<T>()
+            .json::<HttpAnswer<T>>()
             .await?
     )
 }
