@@ -8,7 +8,7 @@ pub fn logout() -> Html {
     session_storage.delete("jwt").unwrap();
     let navigator = use_navigator().unwrap();
     //navigator.push(&crate::modules::router::Route::Root);
-    navigator.replace(&crate::modules::router::Route::Root);
+    navigator.replace(&crate::modules::router::Route::Login);
     html! {
         {"Hello logout!"}
     }

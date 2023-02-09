@@ -23,6 +23,9 @@ input[type="text"] {
     height: 200%;
     background-color: aqua;
 }
+a {
+    color: aqua;
+}
 .navbar {
     width: 100%;
     background-color: blueviolet;

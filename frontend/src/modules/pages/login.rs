@@ -4,16 +4,14 @@ use yew::function_component;
 use yew::prelude::*;
 use yew_hooks::*;
 use web_sys::window;
-use yew_router::prelude::use_navigator;
+use yew_router::prelude::{Link, use_navigator};
 
 use gloo::console::log;
 use models::{LoginUser};
-use crate::modules::requests::{post_request};
-
+use crate::modules::{router::Route, requests::{post_request}};
 
 #[function_component(LoginForm)]
 pub fn login_form() -> Html {
-    let trigger = yew::functional::use_force_update();
     let login_info = use_state(|| LoginUser::default());
     let navigator = use_navigator().unwrap();
     let login = {
@@ -25,21 +23,33 @@ pub fn login_form() -> Html {
                     log!(format!("OK: {}", res.message));
                     let session_storage = window().unwrap().session_storage().unwrap().unwrap();
                     match session_storage.set("jwt", &result) {
-                        Ok(()) => Ok(()),
-                        Err(e) => Err(format!("{:#?}", e))
+                        Ok(()) => Ok("Ok".to_string()),
+                        Err(e) => Err(e.as_string().unwrap_or("Error setting token!".to_string()))
                     }
                 },
-                Err(e) => {log!(format!("Error getting token: {:#?}", e)); Err("Error with getting token!".to_string())}
+                Err(e) => {log!(format!("Error with authentication: {:#?}", e)); Err(e)}
             }
         })
     };
 
+    use_effect_with_deps(
+        move |login| {
+            if !login.loading{
+                    if login.error.is_none() && login.data.is_some() {
+                    navigator.push(&Route::Root)
+                }
+            }
+            || ()
+        },
+        login.clone()
+    );
+
     let onsubmit = {
+        let login = login.clone();
         Callback::from( move |_e: SubmitEvent| {
+            _e.prevent_default();
             log!("Submit!!");
             login.run();
-            trigger.force_update();
-            navigator.replace(&crate::modules::router::Route::Root);
         })
     };
     let oninput_email = {
@@ -78,12 +88,22 @@ pub fn login_form() -> Html {
                         placeholder="Password goes here"/>
                 </fieldset>
                 <fieldset>
+                    <label for="submit">{
+                        if let Some(e) = &login.error{
+                            e
+                        }else {
+                            "No error"
+                        }
+                    }</label>
                     <button
                         type="submit">
                         {"Login"}
                     </button>
                 </fieldset>
             </form>
+            <h1>{"OR"}</h1>
+            <h2><Link<Route> to={Route::Register}>{"REGISTER"}</Link<Route>></h2>
         </>
     }
 }
+

@@ -28,9 +28,9 @@ pub enum Route {
 pub fn switch(route: Route) -> Html {
     match route {
         Route::Root => html! {<><Navbar/><h1>{"Das main page"}</h1></>},
-        Route::Login => html! {<><Navbar/><LoginForm/></>},
+        Route::Login => html! {<><LoginForm/></>},
         Route::Users => html! {<><Navbar/><ListUsers/></>},
-        Route::Register => html! {<><Navbar/><Register/></>},
+        Route::Register => html! {<><Register/></>},
         Route::Logout => html! {<><Navbar/><Logout/> </>},
         Route::NotFound => html! {<h1>{"404"}</h1>},
     }

@@ -1,4 +1,4 @@
-use actix_web::{get, post, delete, web, web::Json, App, HttpResponse, HttpServer, Responder};
+use actix_web::{get, post, delete, web, web::Json, HttpRequest, App, HttpResponse, HttpServer, Responder};
 use actix_cors::Cors;
 use models::{NewUser, LoginUser, HttpAnswer};
 use db;
@@ -44,60 +44,71 @@ async fn new_user(user: Json<NewUser>) -> impl Responder {
 }
 
 #[post("/users/login")]
-async fn login_user(user: Json<LoginUser>) -> impl Responder {
-    //vertify user using the database backend
-    println!("Logging in user: {:#?}", user);
-    match db::get_user_by_email(&user.email) {
-        Ok((id, hash)) => {  //user exists
-            println!("User exists!\nChecking password...");
-            let hash = PasswordHash::new(&hash).unwrap();
-            if PasswordVerifier::verify_password(&Argon2::default(), user.password.as_bytes(), &hash).is_ok() {
-                println!("Password OK!");
-                let key = fs::read_to_string("secret.key").unwrap();
-                let token = encode(
-                    &Header::default(),
-                    &id,
-                    &EncodingKey::from_secret(key.as_ref()));
-                match token {
-                    Ok(token) => {
-                        println!("Session token OK: {token}");
-                        HttpResponse::Ok().json(
-                            HttpAnswer{
-                                message: String::from("Successful login!"),
-                                content: Ok::<String, String>(token)
-                            }
-                        )
-                    },
-                    Err(e) => {
-                        println!("Error with token: {e}");
-                        HttpResponse::BadRequest().json(
-                            HttpAnswer{
-                                message: format!("Error with token: {e}"),
-                                content: Err::<String, String>(format!("Error with token: {e}"))
-                            }
-                        )
+async fn login_user(req: HttpRequest, user: Json<LoginUser>) -> impl Responder {
+
+    if !req.head().headers.get("jwt").is_some(){    //check if user is logged in
+        //than vertify user using the database backend
+        println!("Logging in user: {:#?}", user);
+        match db::get_user_by_email(&user.email) {
+            Ok((id, hash)) => {  //user exists
+                println!("User exists!\nChecking password...");
+                let hash = PasswordHash::new(&hash).unwrap();
+                if PasswordVerifier::verify_password(&Argon2::default(), user.password.as_bytes(), &hash).is_ok() {
+                    println!("Password OK!");
+                    let key = fs::read_to_string("secret.key").unwrap();
+                    let token = encode(
+                        &Header::default(),
+                        &id,
+                        &EncodingKey::from_secret(key.as_ref()));
+                    match token {
+                        Ok(token) => {
+                            println!("Session token OK: {token}");
+                            HttpResponse::Ok().json(
+                                HttpAnswer{
+                                    message: String::from("Successful login!"),
+                                    content: Ok::<String, String>(token)
+                                }
+                            )
+                        },
+                        Err(e) => {
+                            println!("Error with token: {e}");
+                            HttpResponse::BadRequest().json(
+                                HttpAnswer{
+                                    message: format!("Error with token: {e}"),
+                                    content: Err::<String, String>(format!("Error with token: {e}"))
+                                }
+                            )
+                        }
                     }
+                }else{
+                    println!("Invalid password!");
+                    HttpResponse::BadRequest().json(
+                        HttpAnswer{
+                            message: String::from("Invalid Password!"),
+                            content: Err::<String, String>(format!("Invalid email or password!"))
+                        }
+                    )
                 }
-            }else{
-                println!("Invalid password!");
+            },
+            Err(s) => { //User does not exist
+                println!("Error getting user: {s}");
+                println!("User not found!\nBad username probably");
                 HttpResponse::BadRequest().json(
                     HttpAnswer{
-                        message: String::from("Invalid Password!"),
-                        content: Err::<String, String>(format!("Invalid password!"))
+                        message: String::from("Invalid email or password!"),
+                        content: Err::<String, String>(format!("Invalid email or password! (or someting bad happened in the background)"))
                     }
                 )
             }
-        },
-        Err(s) => { //Something bad happened no login happening
-            println!("Error with vertification!");
-            println!("Error getting user: {s}");
-            HttpResponse::BadRequest().json(
-                HttpAnswer{
-                    message: String::from("Invalid email or password!"),
-                    content: Err::<String, String>(format!("Error getting user: {s}"))
-                }
-            )
         }
+    } else { //user is logged in
+        println!("User is logged in!");
+        HttpResponse::BadRequest().json(
+            HttpAnswer{
+                message: String::from("User logged!"),
+                content: Err::<String, String>(format!("You are logged in!"))
+            }
+        )
     }
 }
 

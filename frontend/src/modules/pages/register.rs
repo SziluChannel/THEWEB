@@ -3,7 +3,8 @@ use yew_hooks::{use_async};
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use models::{NewUser};
-use crate::modules::requests::{post_request};
+use crate::modules::{router::{Route}, requests::{post_request}};
+use yew_router::prelude::{Link};
 
 #[function_component(Register)]
 pub fn sign_up() -> Html {
@@ -77,36 +78,40 @@ pub fn sign_up() -> Html {
         }
     )};
     html!(
-        <form {onsubmit}>
-            <fieldset>
-                <label for="name">{"Name:"}</label>
-                <input
-                    type="name"
-                    oninput={name_input}
-                    placeholder="Name goes here"/>
-            </fieldset>
-            <fieldset>
-                <label for="email">{"Email:"}</label>
-                <input
-                    type="email"
-                    oninput={email_input}
-                    placeholder="Emil goes here"/>
-            </fieldset>
-            <fieldset>
-                <label for="password">{"Password:"}</label>
-                <input
-                    type="password"
-                    oninput={password_input}
-                    placeholder="Give a pass..."/>
-            </fieldset>
-            <fieldset>
-                <h3><label for="Error">{ (*error).clone() }</label></h3>
-            </fieldset>
-            <fieldset>
-                <input
-                    type="submit"
-                    value={"Add user"}/>
-            </fieldset>
-        </form>
+        <>
+            <form {onsubmit}>
+                <fieldset>
+                    <label for="name">{"Name:"}</label>
+                    <input
+                        type="name"
+                        oninput={name_input}
+                        placeholder="Name goes here"/>
+                </fieldset>
+                <fieldset>
+                    <label for="email">{"Email:"}</label>
+                    <input
+                        type="email"
+                        oninput={email_input}
+                        placeholder="Emil goes here"/>
+                </fieldset>
+                <fieldset>
+                    <label for="password">{"Password:"}</label>
+                    <input
+                        type="password"
+                        oninput={password_input}
+                        placeholder="Give a pass..."/>
+                </fieldset>
+                <fieldset>
+                    <h3><label for="Error">{ (*error).clone() }</label></h3>
+                </fieldset>
+                <fieldset>
+                    <input
+                        type="submit"
+                        value={"Add user"}/>
+                </fieldset>
+            </form>
+            <h1>{"OR"}</h1>
+            <h2><Link<Route> to={Route::Login}>{"LOGIN"}</Link<Route>></h2>
+        </>
     )
 }
