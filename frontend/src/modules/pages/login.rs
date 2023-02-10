@@ -35,7 +35,7 @@ pub fn login_form() -> Html {
     use_effect_with_deps(
         move |login| {
             if !login.loading{
-                    if login.error.is_none() && login.data.is_some() {
+                if login.error.is_none() && login.data.is_some() {
                     navigator.push(&Route::Root)
                 }
             }

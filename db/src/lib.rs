@@ -7,6 +7,7 @@ use std::error::Error;
 use std::str::FromStr;
 use lazy_static::lazy_static;
 use std::sync::Mutex;
+use rand::distributions::{Alphanumeric, DistString};
 
 lazy_static!{
     static ref DATABASE_CONNECTION: Mutex<PgConnection> = Mutex::new({
@@ -36,12 +37,17 @@ pub fn get_user_by_email(mail: &str) -> Result<(String, String), String>{
     }
 }
 
+fn generate_confirmation_token() -> String {
+    Alphanumeric.sample_string(&mut rand::thread_rng(), 50)
+}
+
 pub fn new_user(user: &NewUser) -> Result<String, String>{
     use schema::users::dsl::*;
     let new_user = InsertableNewUser {
         name: &user.name,
         email: &user.email,
         password: &user.password,
+        confirmation_token: &generate_confirmation_token(),
     };
     let res = diesel::insert_into(users)
         .values(&new_user)

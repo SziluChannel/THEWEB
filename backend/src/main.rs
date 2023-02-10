@@ -30,7 +30,7 @@ async fn new_user(user: Json<NewUser>) -> impl Responder {
     user.password = PasswordHasher::hash_password(
         &Argon2::default(),
         user.password.as_bytes(),
-        &base64::engine::general_purpose::STANDARD.encode(b"Hello world~")
+        &base64::engine::general_purpose::STANDARD.encode(b"G!J4kf4g3lf434fkjKF%!ZJgK!RK5~")
     ).expect("Errror with hashing").to_string();
     HttpResponse::Ok().json(
         HttpAnswer{

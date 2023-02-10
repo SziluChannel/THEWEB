@@ -1,9 +1,7 @@
 use uuid::Uuid;
 use serde::{Serialize, Deserialize};
 use diesel::prelude::*;
-
-use regex::Regex;
-
+use email_address::*;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct HttpAnswer<T> {
     pub message: String,
@@ -15,7 +13,10 @@ pub struct User{
     pub id: Uuid,
     pub name: String,
     pub email: String,
-    pub password: String
+    pub password: String,
+    pub admin: bool,
+    pub confirmation_token: String,
+    pub confirmed: bool
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -34,8 +35,7 @@ pub struct NewUser{
 impl NewUser {
     pub fn validated(&self) -> bool {
         if !self.name.is_empty() && !self.email.is_empty() && !self.password.is_empty() {
-            let regex = Regex::new(r"(?m)^((?!\.)[\w-_.]*[^.])(@\w+)(\.\w+(\.\w+)?[^.\W])$").unwrap();
-            regex.is_match(&self.email)
+            EmailAddress::is_valid(&self.email)
         }
         else{
             false

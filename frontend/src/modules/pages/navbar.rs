@@ -14,6 +14,7 @@ pub fn navbar() -> Html {
                 <table class="navbar">
                     <tr>
                         <td><Link<Route> to={Route::Root}>{"HOME"}</Link<Route>></td>
+                        <td><Link<Route> to={Route::Chat}>{"CHAT"}</Link<Route>></td>
                         <td><Link<Route> to={Route::Users}>{"USERS"}</Link<Route>></td>
                         <td onclick={&*onclick}><Link<Route> to={Route::Logout}>{"LOGOUT"}</Link<Route>></td>
                     </tr>

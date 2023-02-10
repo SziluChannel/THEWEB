@@ -14,3 +14,4 @@ diesel = { version = "2.0.2", features = [
 uuid = "1.2.2"
 serde = { version = "1.0.152", features = ["derive"] }
 lazy_static = "1.4.0"
+rand = "0.8.5"

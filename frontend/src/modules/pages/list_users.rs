@@ -29,6 +29,9 @@ pub fn list_users() -> Html {
             <td>{format!("{}", user.name)}</td>
             <td>{format!("{}", user.email)}</td>
             <td>{format!("{}", user.password)}</td>
+            <td>{format!("{}", user.admin)}</td>
+            <td>{format!("{}", user.confirmed)}</td>
+            <td>{format!("{}", user.confirmation_token)}</td>
         </tr>
     }).collect::<Html>();
 
@@ -48,6 +51,15 @@ pub fn list_users() -> Html {
                         </td>
                         <td>
                             {"Password"}
+                        </td>
+                        <td>
+                            {"Admin"}
+                        </td>
+                        <td>
+                            {"Confirmed"}
+                        </td>
+                        <td>
+                            {"Token"}
                         </td>
                     </tr>
                     {users}

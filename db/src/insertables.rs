@@ -6,5 +6,6 @@ use diesel::prelude::*;
 pub struct InsertableNewUser<'a> {
     pub name: &'a str,
     pub email: &'a str,
-    pub password: &'a str
+    pub password: &'a str,
+    pub confirmation_token: &'a str
 }

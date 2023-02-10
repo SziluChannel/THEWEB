@@ -4,11 +4,12 @@ use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use models::{NewUser};
 use crate::modules::{router::{Route}, requests::{post_request}};
-use yew_router::prelude::{Link};
+use yew_router::{prelude::{Link, use_navigator}};
 
 #[function_component(Register)]
 pub fn sign_up() -> Html {
     let user_info = use_state(|| NewUser::default());
+    let navigator = use_navigator().unwrap();
     let error = use_state(|| String::from("OK"));
     let create_user = {
         let user_info = user_info.clone();
@@ -32,7 +33,25 @@ pub fn sign_up() -> Html {
             }
         })
     };
-
+    {
+        let error = error.clone();
+        use_effect_with_deps(
+            move |create_user| {
+                if !create_user.loading{
+                    match create_user.error.clone() {
+                        Some(e) => {
+                            log!(format!("ERROR OCCURED: {e}!"));
+                            error.set(e);
+                        },
+                        None => {
+                            log!("OK with create_user!");
+                            navigator.push(&Route::Login);
+                        }
+                    }
+                }
+            }, create_user.clone()
+        );
+    }
     let onsubmit = {
         let user_info = user_info.clone();
         let error = error.clone();
@@ -42,10 +61,6 @@ pub fn sign_up() -> Html {
             log!("Submitted new user...");
             if user_info.validated() {
                 create_user.run();
-                if create_user.error != None {
-                    log!(format!("Error result: {:#?}", create_user.error));
-                    error.set(create_user.error.clone().unwrap_or("OK".to_string()));
-                }
             }else {
                 log!("Incomplete form!");
                 error.set(String::from("Incomplete form!"));

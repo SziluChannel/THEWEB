@@ -6,6 +6,7 @@ use crate::modules::pages::{
     register::Register,
     logout::Logout,
     navbar::Navbar,
+    chat::Chat,
 };
 
 #[derive(Clone, Routable, PartialEq)]
@@ -20,6 +21,8 @@ pub enum Route {
     Register,
     #[at("/logout")]
     Logout,
+    #[at("/chat")]
+    Chat,
     #[not_found]
     #[at("/404")]
     NotFound
@@ -32,6 +35,7 @@ pub fn switch(route: Route) -> Html {
         Route::Users => html! {<><Navbar/><ListUsers/></>},
         Route::Register => html! {<><Register/></>},
         Route::Logout => html! {<><Navbar/><Logout/> </>},
+        Route::Chat => html! {<><Navbar/><Chat/></>},
         Route::NotFound => html! {<h1>{"404"}</h1>},
     }
 }

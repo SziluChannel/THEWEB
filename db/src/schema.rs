@@ -6,5 +6,8 @@ diesel::table! {
         name -> Varchar,
         email -> Varchar,
         password -> Varchar,
+        admin -> Bool,
+        confirmation_token -> Varchar,
+        confirmed -> Bool,
     }
 }
