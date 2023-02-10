@@ -18,6 +18,13 @@ pub struct User{
     pub password: String
 }
 
+#[derive(Debug, PartialEq, Clone)]
+pub struct ConfirmUser {
+    pub name: String,
+    pub email: String,
+    pub link: String
+}
+
 #[derive(Debug, PartialEq, Queryable, Serialize, Deserialize, Clone)]
 pub struct NewUser{
     pub name: String,
