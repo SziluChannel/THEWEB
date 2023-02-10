@@ -4,5 +4,6 @@ members = [
 	"frontend",
 	"backend",
 	"db",
-	"models"
+	"models",
+	"mailer"
 ]

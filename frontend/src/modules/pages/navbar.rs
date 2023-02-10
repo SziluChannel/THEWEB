@@ -1,14 +1,12 @@
 use yew::prelude::*;
 use crate::modules::router::{Route};
 use yew_router::{prelude::{Link}};
-use gloo_console::log;
 
 #[function_component(Navbar)]
 pub fn navbar() -> Html {
     let trigger = yew::functional::use_force_update();
     let onclick = use_state(move || Callback::from(move |_e: MouseEvent| {
         trigger.force_update();
-        log!("THe cock inn!!");
     }));
     html! {
         <header>
