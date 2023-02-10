@@ -5,7 +5,7 @@ CREATE TABLE users (
     email VARCHAR(100) NOT NULL UNIQUE,
     password VARCHAR NOT NULL,
     admin BOOLEAN DEFAULT FALSE NOT NULL,
-    confirmation_token VARCHAR(50) NOT NULL,
+    confirmation_token VARCHAR(50) NOT NULL UNIQUE,
     confirmed BOOLEAN NOT NULL DEFAULT FALSE,
     PRIMARY KEY (ID)
 );

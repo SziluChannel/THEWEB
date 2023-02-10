@@ -5,7 +5,7 @@ use db;
 use password_hash::{PasswordHasher, PasswordVerifier, PasswordHash};
 use argon2::Argon2;
 use base64::Engine;
-use jsonwebtoken::{encode, Header, EncodingKey};
+use jsonwebtoken::{encode, Header, EncodingKey, Validation, Algorithm};
 use std::fs;
 
 #[get("/")]
@@ -18,8 +18,19 @@ async fn echo(req_body: String) -> impl Responder {
     HttpResponse::Ok().body(req_body)
 }
 
+async fn get_jwt_value(request: &HttpRequest) -> Option<String> {
+    Some(request.headers().get("jwt")?.to_str().unwrap().to_string())
+}
+
+async fn validate_header(req: &HttpRequest) -> Option<String> {
+    let h = get_jwt_value(&req).await.unwrap();
+    let val = Validation::new(Algorithm::HS512);
+    //val.buil
+    Some("he".to_string())
+}
+
 #[get("/users/all")]
-async fn get_all_users() -> impl Responder {
+async fn get_all_users(req: HttpRequest) -> impl Responder {
     println!("In Users/all!!");
     Json(db::get_all_users())
 }
@@ -50,15 +61,15 @@ async fn login_user(req: HttpRequest, user: Json<LoginUser>) -> impl Responder {
         //than vertify user using the database backend
         println!("Logging in user: {:#?}", user);
         match db::get_user_by_email(&user.email) {
-            Ok((id, hash)) => {  //user exists
+            Ok(u) => {  //user exists
                 println!("User exists!\nChecking password...");
-                let hash = PasswordHash::new(&hash).unwrap();
+                let hash = PasswordHash::new(&u.password).unwrap();
                 if PasswordVerifier::verify_password(&Argon2::default(), user.password.as_bytes(), &hash).is_ok() {
                     println!("Password OK!");
                     let key = fs::read_to_string("secret.key").unwrap();
                     let token = encode(
                         &Header::default(),
-                        &id,
+                        &u.id,
                         &EncodingKey::from_secret(key.as_ref()));
                     match token {
                         Ok(token) => {

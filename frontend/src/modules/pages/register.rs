@@ -21,7 +21,7 @@ pub fn sign_up() -> Html {
                     match answer.content {
                         Ok(()) => {
                             log!(format!("OK: {}",answer.message));
-                            Ok(())
+                            Ok("Ok".to_string())
                         }
                         Err(e) => {
                             log!(format!("Error: {e}"));
@@ -45,7 +45,9 @@ pub fn sign_up() -> Html {
                         },
                         None => {
                             log!("OK with create_user!");
-                            navigator.push(&Route::Login);
+                            if create_user.data.is_some() {
+                                navigator.push(&Route::Login);
+                            }
                         }
                     }
                 }
