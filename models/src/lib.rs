@@ -26,6 +26,22 @@ pub struct ConfirmUser {
     pub link: String
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct UserClaims {
+    pub name: String,
+    pub email: String,
+    pub admin: bool
+}
+
+impl From<User> for UserClaims {
+    fn from(user: User) -> Self {
+        UserClaims {
+            name: user.name,
+            email: user.email,
+            admin: user.admin
+        }
+    }
+}
 #[derive(Debug, PartialEq, Queryable, Serialize, Deserialize, Clone)]
 pub struct NewUser{
     pub name: String,

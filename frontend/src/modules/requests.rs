@@ -62,7 +62,7 @@ where
     )
 }
 
-pub async fn get_request<B>(path: &str) -> Result<B, Error>
+pub async fn get_request<B>(path: &str) -> Result<HttpAnswer<B>, Error>
 where B: DeserializeOwned {
     Ok(
         request::<()>(
@@ -70,7 +70,7 @@ where B: DeserializeOwned {
             path,
             ())
             .await
-            .json::<B>()
+            .json::<HttpAnswer<B>>()
             .await?
         )
 }

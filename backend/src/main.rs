@@ -1,16 +1,32 @@
 use actix_web::{get, post, delete, web, web::Json, HttpRequest, App, HttpResponse, HttpServer, Responder};
 use actix_cors::Cors;
-use models::{NewUser, LoginUser, HttpAnswer};
+use models::{NewUser, User, LoginUser, HttpAnswer, UserClaims};
 use db;
 use password_hash::{PasswordHasher, PasswordVerifier, PasswordHash};
 use argon2::Argon2;
 use base64::Engine;
-use jsonwebtoken::{encode, Header, EncodingKey, Validation, Algorithm};
-use std::fs;
+use std::{fs, error::Error};
+
+use jwt_simple::prelude::*;
+use lazy_static::lazy_static;
+
+lazy_static! {
+    static ref JWT_KEY_PAIR: RS384KeyPair = {
+        get_key_from_file().unwrap()
+    };
+}
 
 #[get("/")]
 async fn hello() -> impl Responder {
-    HttpResponse::Ok().body("Hello world!")
+    HttpResponse::Ok().body(format!("Secret key: {:#?}", &*JWT_KEY_PAIR))
+}
+
+fn get_key_from_file() -> Result<RS384KeyPair, Box<dyn Error>> {
+    Ok(
+        RS384KeyPair::from_pem(
+            &fs::read_to_string("private.pem")?
+        )?
+    )
 }
 
 #[post("/echo")]
@@ -18,21 +34,53 @@ async fn echo(req_body: String) -> impl Responder {
     HttpResponse::Ok().body(req_body)
 }
 
-async fn get_jwt_value(request: &HttpRequest) -> Option<String> {
-    Some(request.headers().get("jwt")?.to_str().unwrap().to_string())
+fn get_jwt_value(request: &HttpRequest) -> Option<String> {
+    println!("Headers: {:#?}", request.headers().get("authorization"));
+    let tmp = request.headers().get("authorization")?.to_str().unwrap().to_string();
+    let mut tmp = tmp.split(" ");
+    if tmp.any(|s| s == "bearer") {
+        Some(tmp.last().unwrap().to_string())
+    }else {
+        None
+    }
 }
 
-async fn validate_header(req: &HttpRequest) -> Option<String> {
-    let h = get_jwt_value(&req).await.unwrap();
-    let val = Validation::new(Algorithm::HS512);
+fn validate_token(req: &HttpRequest) -> Option<UserClaims> {
+    let h = get_jwt_value(&req)?;
+    println!("The jwt token value: {h}");
+    Some(JWT_KEY_PAIR.public_key().verify_token(&h, None).unwrap().custom)
     //val.buil
-    Some("he".to_string())
 }
 
 #[get("/users/all")]
 async fn get_all_users(req: HttpRequest) -> impl Responder {
-    println!("In Users/all!!");
-    Json(db::get_all_users())
+    println!("In Users/all!!\nValidating token...");
+    match validate_token(&req) {
+        Some(clm) => {
+            if clm.admin {
+                HttpResponse::Ok().json(
+                    HttpAnswer{
+                        message: "OK".to_string(),
+                        content: Some(db::get_all_users()),
+                    }
+                )
+            }else {
+                HttpResponse::Forbidden().json(
+                    HttpAnswer{
+                        message: "Not admin account!".to_string(),
+                        content: None::<Vec<User>>,
+                    }
+                )
+            }
+        },
+        None => HttpResponse::Forbidden().json(
+            HttpAnswer {
+                message: "Not logged in no data!".to_string(),
+                content: None::<Vec<User>>,
+            }
+        )
+    }
+
 }
 
 #[post("/users/new")]
@@ -54,6 +102,11 @@ async fn new_user(user: Json<NewUser>) -> impl Responder {
     )
 }
 
+fn generate_user_login_token(user: &UserClaims) -> Result<String, Box<dyn Error>> {
+    let claims = Claims::with_custom_claims(user.clone(), Duration::from_hours(1));
+    Ok(JWT_KEY_PAIR.sign(claims)?)
+}
+
 #[post("/users/login")]
 async fn login_user(req: HttpRequest, user: Json<LoginUser>) -> impl Responder {
 
@@ -65,12 +118,9 @@ async fn login_user(req: HttpRequest, user: Json<LoginUser>) -> impl Responder {
                 println!("User exists!\nChecking password...");
                 let hash = PasswordHash::new(&u.password).unwrap();
                 if PasswordVerifier::verify_password(&Argon2::default(), user.password.as_bytes(), &hash).is_ok() {
-                    println!("Password OK!");
-                    let key = fs::read_to_string("secret.key").unwrap();
-                    let token = encode(
-                        &Header::default(),
-                        &u.id,
-                        &EncodingKey::from_secret(key.as_ref()));
+                    println!("Password OK!\nCreating token key!");
+
+                    let token = generate_user_login_token(&UserClaims::from(u));
                     match token {
                         Ok(token) => {
                             println!("Session token OK: {token}");

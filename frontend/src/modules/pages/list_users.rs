@@ -9,16 +9,19 @@ use crate::modules::requests::{get_request, post_request, delete_request};
 
 #[function_component(ListUsers)]
 pub fn list_users() -> Html {
+    let error = use_state(|| String::default());
     let users: UseStateHandle<Vec<User>> = use_state(|| vec![]);
     {
         let users = users.clone();
+        let error = error.clone();
         use_effect_with_deps(move |_| {
-            let users = users.clone();
             wasm_bindgen_futures::spawn_local(async move {
-                let fetched_users = get_request::<Vec<User>>("/users/all")
-                    .await
-                    .unwrap();
-                users.set(fetched_users);
+                let fetched_users = get_request::<Option<Vec<User>>>("/users/all")
+                    .await.unwrap();
+                match fetched_users.content {
+                    Some(u) => users.set(u),
+                    None => error.set(format!("Error getting users: {}", fetched_users.message))
+                }
             });
             || ()
         }, ());
@@ -38,6 +41,7 @@ pub fn list_users() -> Html {
     html!{
         <>
             <div>
+                <h4>{ &*error }</h4>
                 <table id="users">
                     <tr>
                         <td>

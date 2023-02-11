@@ -2,3 +2,5 @@ target
 frontend/dist
 Cargo.lock
 backend/secret.key
+backend/public.pem
+backend/private.pem
