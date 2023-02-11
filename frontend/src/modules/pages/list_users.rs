@@ -1,7 +1,7 @@
 use yew::prelude::*;
 use web_sys::HtmlInputElement;
 use models::{User, NewUser};
-use std::error::Error;
+use yew_hooks::use_async;
 use std::{vec};
 use gloo_console::log;
 use crate::modules::requests::{get_request, post_request, delete_request};
@@ -151,23 +151,64 @@ fn send_user(user: &NewUser){
 
 #[function_component(DeleteUser)]
 fn del_user() -> Html {
-    let deleter_ref = use_node_ref();
-    let deleter_handle = use_state(String::new);
-    let deleter_value = (*deleter_handle).to_string();
+    let deleter_handle = use_state(|| String::default());
+    let msg = use_state(|| String::default());
 
+    let delete_user = {
+        let deleter_handle = deleter_handle.clone();
+        use_async(async move {
+            match delete_request::<()>(&format!("/users/{}", *deleter_handle), ()).await {
+                Ok(a) => Ok(a),
+                Err(e) => Err(e.to_string())
+            }
+
+        })
+    };
+
+    {
+        let msg = msg.clone();
+        let delete_user = delete_user.clone();
+        use_effect_with_deps(move |delete_user| {
+            if !delete_user.loading {
+                match &delete_user.error {
+                    Some(e) => msg.set(e.to_string()),
+                    None => {
+                        match &delete_user.data {
+                            Some(d) => {
+                                match &d.content {
+                                    Ok(()) => msg.set("Ok".to_string()),
+                                    Err(e) => msg.set(e.to_string())
+                                }
+                            },
+                            None => msg.set(String::default())
+                        }
+                    }
+                }
+            }
+        }, delete_user)
+    }
 
     let onclick = {
-        let deleter_ref = deleter_ref.clone();
-        let result = Callback::from(move |_| {
-            let input = deleter_ref.cast::<HtmlInputElement>();
-            if let Some(val) = input {
-                deleter_handle.set(val.value())
+        let deleter_handle = deleter_handle.clone();
+        let delete_user = delete_user.clone();
+        let result = Callback::from(move |e: SubmitEvent| {
+            if !deleter_handle.is_empty() {
+                log!("Deleter value not empty going forward...");
+                delete_user.run();
+                //delete_user(&deleter_value).unwrap();
+            }else {
+                e.prevent_default();
             }
         });
-        if !deleter_value.is_empty() {
-            delete_user(&deleter_value).unwrap();
-        }
         result
+    };
+
+    let delete_input = {
+        let deleter_handle = deleter_handle.clone();
+        Callback::from(move |e: InputEvent| {
+            let val = e.target_unchecked_into::<HtmlInputElement>().value();
+            deleter_handle.set(val)
+        })
     };
 
     html!{
@@ -178,13 +219,15 @@ fn del_user() -> Html {
                     {"Delete: "}
                     <input type="submit" value={"DeleteUser"}/>
                     <br/>
-                    <input type="id" ref={deleter_ref}/>
+                    <input type="id" oninput={delete_input}/>
+                    <br/>
+                    <h4>{ &*msg }</h4>
                 </form>
             </h4>
         </>
     }
 }
-
+/*
 fn delete_user(id: &str) -> Result<(), Box<dyn Error>> {
     let id = id.to_owned();
     wasm_bindgen_futures::spawn_local(async move {
@@ -194,3 +237,4 @@ fn delete_user(id: &str) -> Result<(), Box<dyn Error>> {
     });
     Ok(())
 }
+ */

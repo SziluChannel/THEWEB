@@ -21,7 +21,7 @@ where B: Serialize {
     builder.send().await.unwrap()
 }
 
-pub async fn delete_request<B>(path: &str, body: B) -> Result<u16, Error>
+pub async fn delete_request<B>(path: &str, body: B) -> Result<HttpAnswer<Result<(), String>>, Error>
 where B: Serialize {
     Ok(
         request::<B>(
@@ -29,12 +29,12 @@ where B: Serialize {
             path,
             body)
             .await
-            .status()
-            .as_u16()
+            .json::<HttpAnswer<Result<(), String>>>()
+            .await?
     )
 }
 
-pub async fn put_request<B>(path: &str, body: B) -> Result<u16, Error>
+pub async fn put_request<B>(path: &str, body: B) -> Result<HttpAnswer<Result<(), String>>, Error>
 where B: Serialize {
     Ok(
         request::<B>(
@@ -42,8 +42,8 @@ where B: Serialize {
             path,
             body)
             .await
-            .status()
-            .as_u16()
+            .json::<HttpAnswer<Result<(), String>>>()
+            .await?
     )
 }
 

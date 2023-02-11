@@ -174,12 +174,40 @@ async fn login_user(req: HttpRequest, user: Json<LoginUser>) -> impl Responder {
 }
 
 #[delete("/users/{user}")]
-async fn delete_user(user: web::Path<String>) -> impl Responder {
-    println!("Deleting user: {}", &user);
-    let result = db::delete_user(&user);
-    match result {
-        Ok(_) => HttpResponse::Ok().body("Ok"),
-        Err(e) => HttpResponse::BadRequest().body(e.to_string()),
+async fn delete_user(req: HttpRequest, user: web::Path<String>) -> impl Responder {
+    match validate_token(&req){
+        Some(clm) => {
+            if clm.admin {
+                println!("Deleting user: {}", &user);
+                return match db::delete_user(&user) {
+                    Ok(()) => HttpResponse::Ok().json(
+                        HttpAnswer {
+                            message: "User successfully deleted!".to_string(),
+                            content: Ok::<(), String>(()),
+                        }
+                    ),
+                    Err(e) => HttpResponse::InternalServerError().json(
+                        HttpAnswer {
+                            message: "Something went wrong while deleting user!".to_string(),
+                            content: Err::<(), String>(e.to_string()),
+                        }
+                    )
+                }
+            }else {
+                HttpResponse::Forbidden().json(
+                    HttpAnswer {
+                        message: "Not admin user!".to_string(),
+                        content: Err::<(), String>("Not admin user!".to_string()),
+                    }
+                )
+            }
+        },
+        None => HttpResponse::Forbidden().json(
+            HttpAnswer {
+                message: "User not logged in!".to_string(),
+                content: Err::<(), String>("Not admin user!".to_string()),
+            }
+        )
     }
 }
 

@@ -2,13 +2,13 @@ use uuid::Uuid;
 use serde::{Serialize, Deserialize};
 use diesel::prelude::*;
 use email_address::*;
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct HttpAnswer<T> {
     pub message: String,
     pub content: T,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Queryable, Debug)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Queryable, Debug)]
 pub struct User{
     pub id: Uuid,
     pub name: String,
