@@ -1,11 +1,20 @@
 use uuid::Uuid;
 use serde::{Serialize, Deserialize};
-use diesel::prelude::*;
+use diesel::{prelude::*};
 use email_address::*;
+use chrono::{NaiveDateTime};
+
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct HttpAnswer<T> {
     pub message: String,
     pub content: T,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Queryable)]
+pub struct Chat {
+    pub id: Uuid,
+    pub name: String,
+    pub created: NaiveDateTime
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Queryable, Debug)]

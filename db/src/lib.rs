@@ -2,7 +2,7 @@ pub mod schema;
 mod insertables;
 use insertables::{InsertableNewUser};
 use diesel::{pg::PgConnection, prelude::*, result, result::Error::DatabaseError, result::DatabaseErrorKind::UniqueViolation};
-use models::{User, NewUser};
+use models::{User, NewUser, Chat};
 use std::error::Error;
 use std::str::FromStr;
 use lazy_static::lazy_static;
@@ -15,6 +15,19 @@ lazy_static!{
         PgConnection::establish(database_url)
             .unwrap_or_else(|_| panic!("Error connecting to url: {}", database_url))
     });
+}
+
+pub fn get_chats_for_user(uid: uuid::Uuid) -> Result<Vec<Chat>, result::Error> {
+    use schema::*;
+    let result = chats::table.left_join(
+        chat_connector::table::on(
+                chat_connector::table,
+            chats::id.eq(chat_connector::chat_id)
+                .and(chat_connector::user_id.eq(uid))
+        ))
+        .select((chats::id, chats::name, chats::created))
+        .get_results::<Chat>(&mut *DATABASE_CONNECTION.lock().unwrap());
+    result
 }
 
 pub fn get_all_users() -> Vec<User>{

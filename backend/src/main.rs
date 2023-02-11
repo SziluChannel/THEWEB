@@ -5,10 +5,12 @@ use db;
 use password_hash::{PasswordHasher, PasswordVerifier, PasswordHash};
 use argon2::Argon2;
 use base64::Engine;
-use std::{fs, error::Error};
+use std::{fs, error::Error, str::FromStr};
 
 use jwt_simple::prelude::*;
 use lazy_static::lazy_static;
+
+use uuid;
 
 lazy_static! {
     static ref JWT_KEY_PAIR: RS384KeyPair = {
@@ -19,6 +21,11 @@ lazy_static! {
 #[get("/")]
 async fn hello() -> impl Responder {
     HttpResponse::Ok().body(format!("Secret key: {:#?}", &*JWT_KEY_PAIR))
+}
+
+#[get("/chats")]
+async fn chats() -> impl Responder {
+    HttpResponse::Ok().body(format!("Secret key: {:#?}", db::get_chats_for_user(db::get_user_by_email("channelszilu@gmail.com").unwrap().id).unwrap()))
 }
 
 fn get_key_from_file() -> Result<RS384KeyPair, Box<dyn Error>> {
@@ -227,6 +234,7 @@ async fn main() -> std::io::Result<()> {
             .service(new_user)
             .service(delete_user)
             .service(login_user)
+            .service(chats)
             .route("/hey", web::get().to(manual_hello))
     })
     .bind(("127.0.0.1", 8888))?

@@ -8,6 +8,8 @@ edition = "2021"
 [dependencies]
 uuid = { version = "1.2.2", features = ["serde"] }
 serde =  { version = "1.0.152", features = ["derive"] }
-diesel = {version = "2.0.2", default-features = false }
+diesel = {version = "2.0.2", default-features = false, features = ["chrono"]}
 
 email_address = "0.2.4"
+
+chrono = { version = "0.4.23", features = ["serde"] }
