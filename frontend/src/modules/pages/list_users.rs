@@ -16,7 +16,7 @@ pub fn list_users() -> Html {
         let error = error.clone();
         use_effect_with_deps(move |_| {
             wasm_bindgen_futures::spawn_local(async move {
-                let fetched_users = get_request::<Option<Vec<User>>>("/users/all")
+                let fetched_users = get_request::<Vec<User>>("/users/all")
                     .await.unwrap();
                 match fetched_users.content {
                     Some(u) => users.set(u),
@@ -42,7 +42,7 @@ pub fn list_users() -> Html {
         <>
             <div>
                 <h4>{ &*error }</h4>
-                <table id="users">
+                <table class={"users"}>
                     <tr>
                         <td>
                             {"ID"}
@@ -176,8 +176,8 @@ fn del_user() -> Html {
                         match &delete_user.data {
                             Some(d) => {
                                 match &d.content {
-                                    Ok(()) => msg.set("Ok".to_string()),
-                                    Err(e) => msg.set(e.to_string())
+                                    Some(_) => msg.set("Ok".to_string()),
+                                    None => msg.set(d.message.clone())
                                 }
                             },
                             None => msg.set(String::default())

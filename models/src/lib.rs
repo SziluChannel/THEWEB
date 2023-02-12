@@ -7,10 +7,30 @@ use chrono::{NaiveDateTime};
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct HttpAnswer<T> {
     pub message: String,
-    pub content: T,
+    pub content: Option<T>,
 }
 
+impl<T> HttpAnswer<T> {
+    pub fn ok(data: T) -> Self {
+        HttpAnswer { message: "OK".to_string(), content: Some(data) }
+    }
+    pub fn err(error: String) -> Self {
+        HttpAnswer { message: error, content: None }
+    }
+}
+
+
+
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Queryable)]
+pub struct Message {
+    pub id: i32,
+    pub user: User,
+    pub chat_id: Uuid,
+    pub content: String,
+    pub created: NaiveDateTime
+}
+
+#[derive(Debug, Serialize, Default, Deserialize, Clone, PartialEq, Queryable)]
 pub struct Chat {
     pub id: Uuid,
     pub name: String,
@@ -37,6 +57,7 @@ pub struct ConfirmUser {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct UserClaims {
+    pub id: Uuid,
     pub name: String,
     pub email: String,
     pub admin: bool
@@ -45,6 +66,7 @@ pub struct UserClaims {
 impl From<User> for UserClaims {
     fn from(user: User) -> Self {
         UserClaims {
+            id: user.id,
             name: user.name,
             email: user.email,
             admin: user.admin

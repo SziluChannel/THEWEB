@@ -2,7 +2,7 @@ pub mod schema;
 mod insertables;
 use insertables::{InsertableNewUser};
 use diesel::{pg::PgConnection, prelude::*, result, result::Error::DatabaseError, result::DatabaseErrorKind::UniqueViolation};
-use models::{User, NewUser, Chat};
+use models::{User, NewUser, Chat, Message};
 use std::error::Error;
 use std::str::FromStr;
 use lazy_static::lazy_static;
@@ -15,6 +15,31 @@ lazy_static!{
         PgConnection::establish(database_url)
             .unwrap_or_else(|_| panic!("Error connecting to url: {}", database_url))
     });
+}
+
+pub fn get_messages_for_chat(cid: uuid::Uuid) -> Result<Vec<Message>, result::Error> {
+    use schema::{
+        messages,
+        users,
+        chats,
+    };
+    //let result = messages::table.left_join(
+      //  chats::table::on(
+        //        chats::table,
+          //  messages::chat_id.eq(chats::id)
+            //    .and(chats::id.eq(cid))
+        //))
+        //.select((messages::id, (), messages::chat_id, messages::content, messages::created))
+        //.get_results::<Message>(&mut *DATABASE_CONNECTION.lock().unwrap());
+    let result
+        = messages::table
+            .inner_join(chats::table)
+            .inner_join(users::table)
+            .filter(chats::id.eq(cid))
+            .select((messages::id, users::all_columns, messages::chat_id, messages::content, messages::created))
+            .limit(100)
+            .get_results::<Message>(&mut *DATABASE_CONNECTION.lock().unwrap());
+    result
 }
 
 pub fn get_chats_for_user(uid: uuid::Uuid) -> Result<Vec<Chat>, result::Error> {
@@ -132,7 +157,6 @@ pub fn delete_user(user_id: &str) -> Result<(), Box<dyn Error>>{
         users.filter(
             id.eq(user_id)
         )).execute(&mut *DATABASE_CONNECTION.lock().unwrap())?;
-
     Ok(())
 }
 

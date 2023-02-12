@@ -14,18 +14,19 @@ pub fn sign_up() -> Html {
     let create_user = {
         let user_info = user_info.clone();
         use_async(async move {
-            let result = post_request::<NewUser, Result<(), String>>("/users/new", (*user_info).clone()).await;
+            let result
+                = post_request::<NewUser, String>("/users/new", (*user_info).clone()).await;
             log!(format!("Result data: {:#?}", result));
             match result {
                 Ok(answer) => {
                     match answer.content {
-                        Ok(()) => {
+                        Some(_) => {
                             log!(format!("OK: {}",answer.message));
                             Ok("Ok".to_string())
                         }
-                        Err(e) => {
-                            log!(format!("Error: {e}"));
-                            Err(e)
+                        None => {
+                            log!(format!("Error: {}", answer.message));
+                            Err(answer.message)
                         }
                     }
                 },

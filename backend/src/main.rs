@@ -1,16 +1,15 @@
 use actix_web::{get, post, delete, web, web::Json, HttpRequest, App, HttpResponse, HttpServer, Responder};
 use actix_cors::Cors;
-use models::{NewUser, User, LoginUser, HttpAnswer, UserClaims};
+use models::{NewUser, Chat, Message, User, LoginUser, HttpAnswer, UserClaims};
 use db;
 use password_hash::{PasswordHasher, PasswordVerifier, PasswordHash};
 use argon2::Argon2;
 use base64::Engine;
-use std::{fs, error::Error, str::FromStr};
+use std::{fs, error::Error};
 
 use jwt_simple::prelude::*;
 use lazy_static::lazy_static;
 
-use uuid;
 
 lazy_static! {
     static ref JWT_KEY_PAIR: RS384KeyPair = {
@@ -23,9 +22,72 @@ async fn hello() -> impl Responder {
     HttpResponse::Ok().body(format!("Secret key: {:#?}", &*JWT_KEY_PAIR))
 }
 
+#[get("/users/current")]
+async fn get_current_user(req: HttpRequest) -> impl Responder {
+    match validate_token(&req) {
+        Some(clm) => match db::get_user_by_id(clm.id){
+            Ok(user) => HttpResponse::Ok().json(HttpAnswer::ok(user)),
+            Err(e) => HttpResponse::InternalServerError().json(
+                HttpAnswer::<User>::err(e.to_string())
+            )
+        },
+        None => HttpResponse::Forbidden().json(
+            HttpAnswer::<User>::err( "User not logged in!".to_string())
+        )
+    }
+}
+
+#[get("/chats/{id}/messages")]
+async fn get_messages_for_chat(req: HttpRequest, cid: web::Path<uuid::Uuid>) -> impl Responder{
+    println!("Getting messages: cid: {cid}");
+    match validate_token(&req) {
+        Some(_clm) => {
+            match db::get_messages_for_chat(*cid) {
+                Ok(msgs) => HttpResponse::Ok().json(
+                    HttpAnswer::ok(msgs)),
+                Err(e) => HttpResponse::InternalServerError().json(
+                    HttpAnswer {
+                        message: format!("Error getting data from database: {}", e.to_string()),
+                        content: None::<Vec<Message>>
+                    }
+                )
+            }
+        },
+        None => HttpResponse::Forbidden().json(
+            HttpAnswer {
+                message: "User not logged in!".to_string(),
+                content: None::<Vec<Message>>
+            }
+        )
+    }
+}
+
 #[get("/chats")]
-async fn chats() -> impl Responder {
-    HttpResponse::Ok().body(format!("Secret key: {:#?}", db::get_chats_for_user(db::get_user_by_email("channelszilu@gmail.com").unwrap().id).unwrap()))
+async fn chats(req: HttpRequest) -> impl Responder {
+    match validate_token(&req) {
+        Some(clm) => {
+            match db::get_chats_for_user(clm.id) {
+                Ok(chs) => HttpResponse::Ok().json(
+                    HttpAnswer {
+                        message: "OK".to_string(),
+                        content: Some(chs)
+                    }
+                ),
+                Err(e) => HttpResponse::InternalServerError().json(
+                    HttpAnswer {
+                        message: format!("Error while getting data from database: {}", e.to_string()),
+                        content: None::<Vec<Chat>>
+                    }
+                )
+            }
+        },
+        None => HttpResponse::Forbidden().json(
+            HttpAnswer {
+                message: "User not logged in!".to_string(),
+                content: None::<Vec<Chat>>
+            }
+        )
+    }
 }
 
 fn get_key_from_file() -> Result<RS384KeyPair, Box<dyn Error>> {
@@ -99,13 +161,11 @@ async fn new_user(user: Json<NewUser>) -> impl Responder {
         &base64::engine::general_purpose::STANDARD.encode(b"G!J4kf4g3lf434fkjKF%!ZJgK!RK5~")
     ).expect("Errror with hashing").to_string();
     HttpResponse::Ok().json(
-        HttpAnswer{
-            message: String::from("OK"),
-            content: match db::new_user(&user) {
-                Ok(_) => Ok(()),
-                Err(r) => Err(r)
-            }
+        match db::new_user(&user) {
+                Ok(_) => HttpAnswer::ok(()),
+                Err(r) => HttpAnswer::err(r)
         }
+
     )
 }
 
@@ -134,7 +194,7 @@ async fn login_user(req: HttpRequest, user: Json<LoginUser>) -> impl Responder {
                             HttpResponse::Ok().json(
                                 HttpAnswer{
                                     message: String::from("Successful login!"),
-                                    content: Ok::<String, String>(token)
+                                    content: Some(token)
                                 }
                             )
                         },
@@ -143,7 +203,7 @@ async fn login_user(req: HttpRequest, user: Json<LoginUser>) -> impl Responder {
                             HttpResponse::BadRequest().json(
                                 HttpAnswer{
                                     message: format!("Error with token: {e}"),
-                                    content: Err::<String, String>(format!("Error with token: {e}"))
+                                    content: None::<String>
                                 }
                             )
                         }
@@ -152,8 +212,8 @@ async fn login_user(req: HttpRequest, user: Json<LoginUser>) -> impl Responder {
                     println!("Invalid password!");
                     HttpResponse::BadRequest().json(
                         HttpAnswer{
-                            message: String::from("Invalid Password!"),
-                            content: Err::<String, String>(format!("Invalid email or password!"))
+                            message: String::from("Invalid Email or Password!"),
+                            content: None::<String>
                         }
                     )
                 }
@@ -163,8 +223,8 @@ async fn login_user(req: HttpRequest, user: Json<LoginUser>) -> impl Responder {
                 println!("User not found!\nBad username probably");
                 HttpResponse::BadRequest().json(
                     HttpAnswer{
-                        message: String::from("Invalid email or password!"),
-                        content: Err::<String, String>(format!("Invalid email or password! (or someting bad happened in the background)"))
+                        message: String::from("Invalid email or password (Or something even worse happened!"),
+                        content: None::<String>
                     }
                 )
             }
@@ -173,8 +233,8 @@ async fn login_user(req: HttpRequest, user: Json<LoginUser>) -> impl Responder {
         println!("User is logged in!");
         HttpResponse::BadRequest().json(
             HttpAnswer{
-                message: String::from("User logged!"),
-                content: Err::<String, String>(format!("You are logged in!"))
+                message: String::from("User logged in!"),
+                content: None::<String>
             }
         )
     }
@@ -190,13 +250,13 @@ async fn delete_user(req: HttpRequest, user: web::Path<String>) -> impl Responde
                     Ok(()) => HttpResponse::Ok().json(
                         HttpAnswer {
                             message: "User successfully deleted!".to_string(),
-                            content: Ok::<(), String>(()),
+                            content: Some(()),
                         }
                     ),
                     Err(e) => HttpResponse::InternalServerError().json(
                         HttpAnswer {
-                            message: "Something went wrong while deleting user!".to_string(),
-                            content: Err::<(), String>(e.to_string()),
+                            message: e.to_string(),
+                            content: None::<()>,
                         }
                     )
                 }
@@ -204,7 +264,7 @@ async fn delete_user(req: HttpRequest, user: web::Path<String>) -> impl Responde
                 HttpResponse::Forbidden().json(
                     HttpAnswer {
                         message: "Not admin user!".to_string(),
-                        content: Err::<(), String>("Not admin user!".to_string()),
+                        content: None::<()>,
                     }
                 )
             }
@@ -212,7 +272,7 @@ async fn delete_user(req: HttpRequest, user: web::Path<String>) -> impl Responde
         None => HttpResponse::Forbidden().json(
             HttpAnswer {
                 message: "User not logged in!".to_string(),
-                content: Err::<(), String>("Not admin user!".to_string()),
+                content: None::<()>,
             }
         )
     }
@@ -235,6 +295,7 @@ async fn main() -> std::io::Result<()> {
             .service(delete_user)
             .service(login_user)
             .service(chats)
+            .service(get_messages_for_chat)
             .route("/hey", web::get().to(manual_hello))
     })
     .bind(("127.0.0.1", 8888))?

@@ -17,9 +17,9 @@ pub fn login_form() -> Html {
     let login = {
         let login_info = login_info.clone();
         use_async( async move {
-            let res = post_request::<LoginUser, Result<String, String>>("/users/login", (*login_info).clone()).await.unwrap();
+            let res = post_request::<LoginUser, String>("/users/login", (*login_info).clone()).await.unwrap();
             match res.content {
-                Ok(result) => {
+                Some(result) => {
                     log!(format!("OK: {}", res.message));
                     let session_storage = window().unwrap().session_storage().unwrap().unwrap();
                     match session_storage.set("jwt", &result) {
@@ -27,7 +27,7 @@ pub fn login_form() -> Html {
                         Err(e) => Err(e.as_string().unwrap_or("Error setting token!".to_string()))
                     }
                 },
-                Err(e) => {log!(format!("Error with authentication: {:#?}", e)); Err(e)}
+                None => {log!(format!("Error with authentication: {:#?}", res.message)); Err(res.message)}
             }
         })
     };
