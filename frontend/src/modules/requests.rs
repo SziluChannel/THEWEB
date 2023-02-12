@@ -34,7 +34,7 @@ where B: Serialize {
     )
 }
 
-pub async fn put_request<B>(path: &str, body: B) -> Result<HttpAnswer<Result<(), String>>, Error>
+pub async fn put_request<B>(path: &str, body: B) -> Result<HttpAnswer<()>, Error>
 where B: Serialize {
     Ok(
         request::<B>(
@@ -42,7 +42,7 @@ where B: Serialize {
             path,
             body)
             .await
-            .json::<HttpAnswer<Result<(), String>>>()
+            .json::<HttpAnswer<()>>()
             .await?
     )
 }

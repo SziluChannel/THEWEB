@@ -1,6 +1,6 @@
-use actix_web::{get, post, delete, web, web::Json, HttpRequest, App, HttpResponse, HttpServer, Responder};
+use actix_web::{get, post, put, delete, web, web::Json, HttpRequest, App, HttpResponse, HttpServer, Responder};
 use actix_cors::Cors;
-use models::{NewUser, Chat, Message, User, LoginUser, HttpAnswer, UserClaims};
+use models::{NewUser, Chat, Message, User, LoginUser, HttpAnswer, NewMessage, UserClaims};
 use db;
 use password_hash::{PasswordHasher, PasswordVerifier, PasswordHash};
 use argon2::Argon2;
@@ -20,6 +20,20 @@ lazy_static! {
 #[get("/")]
 async fn hello() -> impl Responder {
     HttpResponse::Ok().body(format!("Secret key: {:#?}", &*JWT_KEY_PAIR))
+}
+
+#[put("/messages/new")]
+async fn new_message(req: HttpRequest, mut message: Json::<NewMessage>) -> impl Responder {
+    match validate_token(&req) {
+        Some(clms) => {
+            message.user_id = clms.id;
+            match db::new_message(message.clone()) {
+                Ok(()) => HttpResponse::Ok().json(HttpAnswer::ok(())),
+                Err(e) => HttpResponse::InternalServerError().json(HttpAnswer::<()>::err(e.to_string()))
+            }
+        },
+        None => HttpResponse::Forbidden().json(HttpAnswer::<()>::err("User authentication failed!".to_string()))
+    }
 }
 
 #[get("/users/current")]
@@ -296,6 +310,7 @@ async fn main() -> std::io::Result<()> {
             .service(login_user)
             .service(chats)
             .service(get_messages_for_chat)
+            .service(new_message)
             .route("/hey", web::get().to(manual_hello))
     })
     .bind(("127.0.0.1", 8888))?

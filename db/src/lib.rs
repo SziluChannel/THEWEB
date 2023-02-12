@@ -1,8 +1,8 @@
 pub mod schema;
 mod insertables;
-use insertables::{InsertableNewUser};
+use insertables::{InsertableNewUser, InsertableNewMessage};
 use diesel::{pg::PgConnection, prelude::*, result, result::Error::DatabaseError, result::DatabaseErrorKind::UniqueViolation};
-use models::{User, NewUser, Chat, Message};
+use models::{User, NewUser, Chat, Message, NewMessage, QueryableMessage};
 use std::error::Error;
 use std::str::FromStr;
 use lazy_static::lazy_static;
@@ -17,20 +17,28 @@ lazy_static!{
     });
 }
 
+pub fn new_message(message: NewMessage) -> Result<(), result::Error> {
+    use schema::messages::dsl::*;
+    let message = InsertableNewMessage {
+        chat_id: message.chat_id,
+        user_id: message.user_id,
+        content: &message.content
+    };
+    let res = diesel::insert_into(messages)
+        .values(message)
+        .get_result::<QueryableMessage>(&mut *DATABASE_CONNECTION.lock().unwrap());
+    match res {
+        Ok(_) => Ok(()),
+        Err(e) => Err(e)
+    }
+}
+
 pub fn get_messages_for_chat(cid: uuid::Uuid) -> Result<Vec<Message>, result::Error> {
     use schema::{
         messages,
         users,
         chats,
     };
-    //let result = messages::table.left_join(
-      //  chats::table::on(
-        //        chats::table,
-          //  messages::chat_id.eq(chats::id)
-            //    .and(chats::id.eq(cid))
-        //))
-        //.select((messages::id, (), messages::chat_id, messages::content, messages::created))
-        //.get_results::<Message>(&mut *DATABASE_CONNECTION.lock().unwrap());
     let result
         = messages::table
             .inner_join(chats::table)
@@ -38,6 +46,7 @@ pub fn get_messages_for_chat(cid: uuid::Uuid) -> Result<Vec<Message>, result::Er
             .filter(chats::id.eq(cid))
             .select((messages::id, users::all_columns, messages::chat_id, messages::content, messages::created))
             .limit(100)
+            .order_by(messages::created)
             .get_results::<Message>(&mut *DATABASE_CONNECTION.lock().unwrap());
     result
 }

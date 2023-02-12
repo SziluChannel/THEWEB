@@ -20,14 +20,39 @@ impl<T> HttpAnswer<T> {
 }
 
 
-
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Queryable)]
+pub struct QueryableMessage {
+    pub id: i32,
+    pub user_id: Uuid,
+    pub chat_id: Uuid,
+    pub content: String,
+    pub created: NaiveDateTime
+}
+
+#[derive(Debug, Serialize, Default, Deserialize, Clone, PartialEq, Queryable)]
 pub struct Message {
     pub id: i32,
     pub user: User,
     pub chat_id: Uuid,
     pub content: String,
     pub created: NaiveDateTime
+}
+
+#[derive(Debug, PartialEq, Queryable, Serialize, Deserialize, Clone)]
+pub struct NewMessage {
+    pub user_id: Uuid,
+    pub chat_id: Uuid,
+    pub content: String
+}
+
+impl From<Message> for NewMessage {
+    fn from(message: Message) -> Self {
+        NewMessage {
+            user_id: message.user.id,
+            chat_id: message.chat_id,
+            content: message.content
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Default, Deserialize, Clone, PartialEq, Queryable)]
@@ -37,7 +62,7 @@ pub struct Chat {
     pub created: NaiveDateTime
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, Queryable, Debug)]
+#[derive(Serialize, Deserialize, Default, Clone, PartialEq, Queryable, Debug)]
 pub struct User{
     pub id: Uuid,
     pub name: String,
