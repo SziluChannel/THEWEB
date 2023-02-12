@@ -1,6 +1,6 @@
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
-use models::{Chat, Message, NewMessage};
+use models::{Chat, User, Message, NewMessage};
 use yew_hooks::use_async;
 use crate::modules::{requests::{get_request, put_request}};
 use uuid::Uuid;
@@ -22,26 +22,24 @@ pub fn chat() -> Html {
 
 #[function_component(Chats)]
 fn chats() -> Html {
+    let user = {
+        use_async(async move {
+            let tmp = get_request::<User>("/users/current").await.unwrap();
+            match tmp.content {
+                Some(u) => Ok(u),
+                None => Err(tmp.message)
+            }
+        })
+    };
+    let current_user = use_state(|| User::default());
+
     let chats = use_state(|| vec![]);
     let chat_message = use_state(|| String::default());
     let sender_message = use_state(|| String::default());
     let current_chat_id = use_state(|| Uuid::default());
     let messages = use_state(|| vec![]);
     let content = use_state(|| String::default());
-    {
-        let chats = chats.clone();
-        let chat_message = chat_message.clone();
-        use_effect_with_deps(move |_| {
-            wasm_bindgen_futures::spawn_local(async move {
-              let fetched_chats = get_request::<Vec<Chat>>("/chats").await.unwrap();
-              match fetched_chats.content {
-                Some(c) => chats.set(c),
-                None => chat_message.set(fetched_chats.message)
-              }
-            });
-            || ()
-        }, ());
-    }
+
     let get_messages = {
         let current_chat_id = current_chat_id.clone();
         use_async(async move {
@@ -54,6 +52,48 @@ fn chats() -> Html {
             }
         })
     };
+    {
+        let chats = chats.clone();
+        let chat_message = chat_message.clone();
+        let current_chat_id = current_chat_id.clone();
+        let get_messages = get_messages.clone();
+        let user = user.clone();
+        use_effect_with_deps(move |_| {
+            wasm_bindgen_futures::spawn_local(async move {
+                user.run();
+                let fetched_chats = get_request::<Vec<Chat>>("/chats").await.unwrap();
+                match fetched_chats.content {
+                    Some(c) => {
+                        if c.len() > 0 {
+                            let c2 = c.clone();
+                            current_chat_id.set(c2.iter().next().unwrap().id);
+                            get_messages.run()
+                        }
+                        chats.set(c);
+                    },
+                    None => chat_message.set(fetched_chats.message)
+                }
+            });
+            || ()
+        }, ());
+    }
+    {
+        let current_user = current_user.clone();
+        use_effect_with_deps(move |user| {
+            if !user.loading {
+                if user.error.is_none() {
+                    match user.data.clone() {
+                        Some(u) => {
+                            current_user.set(u)
+                        },
+                        None => current_user.set(User::default())
+                    }
+                }else {
+                    current_user.set(User::default())
+                }
+            }
+        }, user.clone())
+    }
     {
         let chat_message = chat_message.clone();
         let messages = messages.clone();
@@ -110,11 +150,22 @@ fn chats() -> Html {
 
     let messages = messages.iter().map(|message| html! {
         <tr>
-            <td><b>{format!("from: {}",message.user.name) }</b><br/>{format!("{}", message.content)}<br/><br/></td>
+            <td style={
+                if message.user == *current_user {
+                    {"text-align: right;"}
+                }else {
+                    {"text-align: left;"}
+                }
+            }>
+                <b>
+                    {format!("from: {}",message.user.name) }</b><br/>{format!("{}", message.content)}
+                <br/>
+                <br/>
+            </td>
         </tr>
     }).collect::<Html>();
 
-    let chats = (chats).iter().map(|cht| {
+    let chats = chats.iter().map(|cht| {
         html! {
             <tr>
                 <td onclick={
@@ -152,6 +203,8 @@ fn chats() -> Html {
                 <table>
                     <h4>{ &*chat_message }</h4>
                     { chats }
+                </table>
+                <table>
                 </table>
                 <div></div>
             </td>

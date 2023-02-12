@@ -39,11 +39,16 @@ async fn new_message(req: HttpRequest, mut message: Json::<NewMessage>) -> impl 
 #[get("/users/current")]
 async fn get_current_user(req: HttpRequest) -> impl Responder {
     match validate_token(&req) {
-        Some(clm) => match db::get_user_by_id(clm.id){
-            Ok(user) => HttpResponse::Ok().json(HttpAnswer::ok(user)),
-            Err(e) => HttpResponse::InternalServerError().json(
-                HttpAnswer::<User>::err(e.to_string())
-            )
+        Some(clm) => {
+            match db::get_user_by_id(clm.id){
+                Ok(user) => {
+                    println!("OKKKKKKKKKKKKKKKKKKK");
+                    HttpResponse::Ok().json(HttpAnswer::ok(user))
+                },
+                Err(e) => HttpResponse::InternalServerError().json(
+                    HttpAnswer::<User>::err(e.to_string())
+                )
+            }
         },
         None => HttpResponse::Forbidden().json(
             HttpAnswer::<User>::err( "User not logged in!".to_string())
@@ -311,6 +316,7 @@ async fn main() -> std::io::Result<()> {
             .service(chats)
             .service(get_messages_for_chat)
             .service(new_message)
+            .service(get_current_user)
             .route("/hey", web::get().to(manual_hello))
     })
     .bind(("127.0.0.1", 8888))?

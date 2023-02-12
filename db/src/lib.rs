@@ -45,7 +45,7 @@ pub fn get_messages_for_chat(cid: uuid::Uuid) -> Result<Vec<Message>, result::Er
             .inner_join(users::table)
             .filter(chats::id.eq(cid))
             .select((messages::id, users::all_columns, messages::chat_id, messages::content, messages::created))
-            .limit(100)
+            .limit(50)
             .order_by(messages::created)
             .get_results::<Message>(&mut *DATABASE_CONNECTION.lock().unwrap());
     result
