@@ -23,6 +23,17 @@ VALUES (
     true
 );
 
+INSERT INTO users
+VALUES (
+    gen_random_uuid (),
+    'ChatDaemon',
+    'chatdaemon@gmail.com',
+    '$argon2id$v=19$m=4096,t=3,p=1$RyFKNGtmNGczbGY0MzRma2pLRiUhWkpnSyFSSzV+$XnXeLQVcm59/IPt+tCGmukzUwyi2KQL/dH2DxfMVZo0',
+    false,
+    'A Démonnak nem kő ilyen h TokEN',
+    true
+);
+
 -- creating non-admin user for testing purposes
 INSERT INTO users
 VALUES (

@@ -17,6 +17,10 @@ lazy_static!{
     });
 }
 
+pub fn new_chat() -> Result<(), result::Error> {
+    todo!()
+}
+
 pub fn new_message(message: NewMessage) -> Result<(), result::Error> {
     use schema::messages::dsl::*;
     let message = InsertableNewMessage {
@@ -78,10 +82,6 @@ pub fn get_user_by_id(uid: uuid::Uuid) -> Result<User, result::Error> {
     .get_result::<User>(
         &mut *DATABASE_CONNECTION.lock().unwrap()
     )
-}
-
-pub fn generate_new_token(_email: &str) -> Result<(), String> {
-    todo!()
 }
 
 pub fn validate_token(token: &str) -> Result<(), String> {
