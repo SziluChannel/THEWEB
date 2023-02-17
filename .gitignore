@@ -1,7 +1,7 @@
 target
 frontend/dist
 Cargo.lock
-db/.env
+.env
 backend/secret.key
 backend/public.pem
 backend/private.pem

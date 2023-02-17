@@ -3,16 +3,23 @@ mod insertables;
 use insertables::{InsertableNewUser, InsertableNewMessage};
 use diesel::{pg::PgConnection, prelude::*, result, result::Error::DatabaseError, result::DatabaseErrorKind::UniqueViolation};
 use models::{User, NewUser, Chat, Message, NewMessage, QueryableMessage};
-use std::error::Error;
+use std::{error::Error, path::PathBuf};
 use std::str::FromStr;
 use lazy_static::lazy_static;
 use std::sync::Mutex;
 use rand::distributions::{Alphanumeric, DistString};
 
+use std::env;
+use dotenvy::dotenv;
+
 lazy_static!{
     static ref DATABASE_CONNECTION: Mutex<PgConnection> = Mutex::new({
-        let database_url = "postgres://appuser:appuser@localhost/theweb";
-        PgConnection::establish(database_url)
+        dotenv().unwrap_or_else(|e| {
+            println!("ERROR with dotenvy: {:#?}", e);
+            PathBuf::new()
+        });
+        let database_url = env::var("HEHE").unwrap_or_else(|e| {println!("Dotenvy error: {}", e.to_string()); String::new()});
+        PgConnection::establish(&database_url)
             .unwrap_or_else(|_| panic!("Error connecting to url: {}", database_url))
     });
 }
