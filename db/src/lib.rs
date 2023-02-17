@@ -18,7 +18,7 @@ lazy_static!{
             println!("ERROR with dotenvy: {:#?}", e);
             PathBuf::new()
         });
-        let database_url = env::var("HEHE").unwrap_or_else(|e| {println!("Dotenvy error: {}", e.to_string()); String::new()});
+        let database_url = env::var("DATABASE_URL").unwrap_or_else(|e| {println!("Dotenvy error: {}", e.to_string()); String::new()});
         PgConnection::establish(&database_url)
             .unwrap_or_else(|_| panic!("Error connecting to url: {}", database_url))
     });
