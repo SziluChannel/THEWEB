@@ -1,6 +1,6 @@
 use actix_web::{get, post, put, delete, web, web::Json, HttpRequest, App, HttpResponse, HttpServer, Responder};
 use actix_cors::Cors;
-use models::{NewUser, Chat, Message, User, LoginUser, HttpAnswer, NewMessage, UserClaims};
+use models::{NewUser, Chat, Message, User, LoginUser, HttpAnswer, NewMessage, UserClaims, NewChat};
 use db;
 use password_hash::{PasswordHasher, PasswordVerifier, PasswordHash};
 use argon2::Argon2;
@@ -53,6 +53,22 @@ async fn get_current_user(req: HttpRequest) -> impl Responder {
         None => HttpResponse::Forbidden().json(
             HttpAnswer::<User>::err( "User not logged in!".to_string())
         )
+    }
+}
+
+#[post("/chats/new")]
+async fn new_chat(req: HttpRequest, mut new_chat: Json<NewChat>) -> impl Responder {
+    match validate_token(&req) {
+        Some(clms) =>{
+            new_chat.members.push(clms.email);
+            match db::new_chat(&*new_chat){
+                Ok(()) => HttpResponse::Ok().json(HttpAnswer::ok(())),
+                Err(e) => HttpResponse::InternalServerError().json(HttpAnswer::<()>::err(e.to_string()))
+            }
+        },
+            None =>
+                HttpResponse::Forbidden().json(
+                    HttpAnswer::<()>::user_not_logged_in())
     }
 }
 
@@ -242,7 +258,7 @@ async fn login_user(req: HttpRequest, user: Json<LoginUser>) -> impl Responder {
                 println!("User not found!\nBad username probably");
                 HttpResponse::BadRequest().json(
                     HttpAnswer{
-                        message: String::from("Invalid email or password (Or something even worse happened!"),
+                        message: String::from("Invalid email or password (Or something even worse happened!: bad email: no user with email)"),
                         content: None::<String>
                     }
                 )
@@ -317,6 +333,7 @@ async fn main() -> std::io::Result<()> {
             .service(get_messages_for_chat)
             .service(new_message)
             .service(get_current_user)
+            .service(new_chat)
             .route("/hey", web::get().to(manual_hello))
     })
     .bind(("127.0.0.1", 8888))?

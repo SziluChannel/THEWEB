@@ -1,8 +1,8 @@
 pub mod schema;
 mod insertables;
-use insertables::{InsertableNewUser, InsertableNewMessage};
+use insertables::{InsertableNewUser, InsertableNewChatConnector, InsertableNewChat, InsertableNewMessage};
 use diesel::{pg::PgConnection, prelude::*, result, result::Error::DatabaseError, result::DatabaseErrorKind::UniqueViolation};
-use models::{User, NewUser, Chat, Message, NewMessage, QueryableMessage};
+use models::{User, NewUser, Chat, NewChat, Message, NewMessage, QueryableMessage};
 use std::{error::Error, path::PathBuf};
 use std::str::FromStr;
 use lazy_static::lazy_static;
@@ -22,10 +22,48 @@ lazy_static!{
         PgConnection::establish(&database_url)
             .unwrap_or_else(|_| panic!("Error connecting to url: {}", database_url))
     });
+    static ref CHAT_DAEMON_ID: uuid::Uuid = {
+        use schema::users::dsl::*;
+        users.filter(email.eq("szilubot@gmail.com"))
+            .get_result::<User>(&mut *DATABASE_CONNECTION.lock().unwrap()).unwrap().id
+    };
 }
 
-pub fn new_chat() -> Result<(), result::Error> {
-    todo!()
+pub fn new_chat(chat: &NewChat) -> Result<(), result::Error> {
+    use schema::chats::dsl::*;
+    let new_chat = InsertableNewChat{
+        name: &chat.name
+    };
+    let new_chat = diesel::insert_into(chats)
+        .values(new_chat)
+        .get_result::<Chat>(&mut *DATABASE_CONNECTION.lock().unwrap())?;
+    for email in chat.members.iter() {
+        create_chat_connector(
+            get_user_by_email(email).unwrap().id,
+            new_chat.id)?;
+    };
+    let creator = chat.members.last().unwrap();
+    let at = new_chat.created.to_string();
+    new_message(NewMessage {
+        user_id: *CHAT_DAEMON_ID,
+        chat_id: new_chat.id,
+        content: format!("{creator} created this chat at {at}!")
+    })?;
+    Ok(())
+}
+
+
+fn create_chat_connector(user: uuid::Uuid, chat: uuid::Uuid) -> Result<(), result::Error>{
+    use schema::chat_connector::dsl::*;
+    let new_connector =
+    InsertableNewChatConnector {
+        chat_id: chat,
+        user_id: user
+    };
+    diesel::insert_into(chat_connector)
+        .values(new_connector)
+        .execute(&mut *DATABASE_CONNECTION.lock().unwrap())?;
+    Ok(())
 }
 
 pub fn new_message(message: NewMessage) -> Result<(), result::Error> {

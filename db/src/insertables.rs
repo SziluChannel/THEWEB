@@ -11,11 +11,23 @@ pub struct InsertableNewUser<'a> {
     pub confirmation_token: &'a str
 }
 
-
 #[derive(Insertable)]
 #[diesel(table_name = messages)]
 pub struct InsertableNewMessage<'a> {
     pub user_id: Uuid,
     pub chat_id: Uuid,
     pub content: &'a str,
+}
+
+#[derive(Insertable)]
+#[diesel(table_name = chats)]
+pub struct  InsertableNewChat<'a> {
+    pub name: &'a str
+}
+
+#[derive(Insertable)]
+#[diesel(table_name = chat_connector)]
+pub struct  InsertableNewChatConnector {
+    pub user_id: Uuid,
+    pub chat_id: Uuid
 }

@@ -14,6 +14,9 @@ impl<T> HttpAnswer<T> {
     pub fn ok(data: T) -> Self {
         HttpAnswer { message: "OK".to_string(), content: Some(data) }
     }
+    pub fn user_not_logged_in() -> Self {
+        HttpAnswer { message: "User not logged in!".to_string(), content: None }
+    }
     pub fn err(error: String) -> Self {
         HttpAnswer { message: error, content: None }
     }
@@ -53,6 +56,12 @@ impl From<Message> for NewMessage {
             content: message.content
         }
     }
+}
+
+#[derive(Debug, Serialize, Default, Deserialize, Clone, PartialEq, Queryable)]
+pub struct NewChat {
+    pub name: String,
+    pub members: Vec<String>
 }
 
 #[derive(Debug, Serialize, Default, Deserialize, Clone, PartialEq, Queryable)]
