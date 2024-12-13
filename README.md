@@ -1,4 +1,4 @@
-# Fullstack-Rust-web-app-template
+# Fullstack-Rust-web-app
 This is a test app written using my framework!
 
 # Instructions
@@ -19,7 +19,7 @@ openssl genrsa -out private.pem 2048
 openssl rsa -in private.pem -outform PEM -pubout -out public.pem
 
 
-You should be able to find the frontend demo in a browser at http://localhost:8080/
+You should be able to find the frontend in a browser at http://localhost:8080/
 
 
 Further instructions can be found at: https://yew.rs
